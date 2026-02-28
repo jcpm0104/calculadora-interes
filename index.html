@@ -1,55 +1,783 @@
 <!DOCTYPE html>
-<html>
+<html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <title>Calculadora Interés</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Calculadora de interés compuesto</title>
+  <style>
+    :root{
+      --bg:#f3efe6;
+      --panel:#0f5b63;
+      --panel2:#0a4750;
+      --bar:#0b3f46;
+      --line:#d9d9d9;
+      --card:#ffffff;
+      --ink:#0a0a0a;
+      --muted:#d7efe9;
+      --btnRed:#b1362f;
+      --btnGreen:#2e7d32;
+      --shadow: 0 10px 24px rgba(0,0,0,.18);
+    }
+
+    body{
+      margin:0;
+      font-family: Arial, Helvetica, sans-serif;
+      background: var(--bg);
+      color: var(--ink);
+    }
+
+    .wrap{
+      max-width: 980px;
+      margin: 22px auto 60px;
+      padding: 0 16px;
+    }
+
+    .shell{
+      background: linear-gradient(180deg, var(--panel), var(--panel2));
+      border-radius: 6px;
+      box-shadow: var(--shadow);
+      overflow: hidden;
+      border: 1px solid rgba(0,0,0,.25);
+    }
+
+    .topBar{
+      background: #0a2f34;
+      padding: 14px 16px;
+      border-bottom: 1px solid rgba(255,255,255,.10);
+      color: #e7f7f3;
+      font-weight: 700;
+      letter-spacing: .2px;
+    }
+
+    .section{
+      padding: 0;
+      border-top: 1px solid rgba(255,255,255,.10);
+    }
+
+    .stepTitle{
+      background: rgba(0,0,0,.20);
+      color: #e8f7f3;
+      padding: 10px 14px;
+      font-weight: 700;
+      border-bottom: 1px solid rgba(255,255,255,.10);
+    }
+
+    .row{
+      display:flex;
+      gap:16px;
+      align-items:flex-start;
+      padding: 14px;
+      color: #eaf7f4;
+    }
+
+    .row + .row{ border-top: 1px solid rgba(255,255,255,.10); }
+
+    .left{
+      flex: 1;
+      min-width: 220px;
+    }
+
+    .right{
+      width: 260px;
+      min-width: 200px;
+      display:flex;
+      justify-content:flex-end;
+    }
+
+    .label{
+      font-weight: 700;
+      margin-bottom: 6px;
+    }
+    .help{
+      font-size: 12px;
+      color: var(--muted);
+      line-height: 1.35;
+      opacity: .95;
+    }
+
+    input, select{
+      width: 180px;
+      padding: 10px 10px;
+      font-size: 16px;
+      border: 1px solid rgba(0,0,0,.25);
+      border-radius: 2px;
+      background: #fff;
+      outline: none;
+      box-shadow: inset 0 1px 2px rgba(0,0,0,.06);
+    }
+    .right input, .right select{ width: 200px; }
+
+    .req{ color: #ff6b6b; font-weight: 900; margin-left: 4px; }
+
+    .btnRow{
+      display:flex;
+      justify-content:flex-end;
+      gap:12px;
+      padding: 14px;
+      background: rgba(0,0,0,.18);
+      border-top: 1px solid rgba(255,255,255,.10);
+    }
+
+    .btn{
+      border: 1px solid rgba(255,255,255,.20);
+      color: #fff;
+      font-weight: 800;
+      padding: 10px 16px;
+      border-radius: 2px;
+      cursor: pointer;
+      letter-spacing: .3px;
+      box-shadow: 0 3px 10px rgba(0,0,0,.25);
+    }
+    .btn.red{ background: linear-gradient(#c6423a, var(--btnRed)); }
+    .btn.green{ background: linear-gradient(#3b9341, var(--btnGreen)); }
+    .btn.gray{ background: linear-gradient(#3b3b3b, #232323); }
+    .btn:active{ transform: translateY(1px); }
+
+    /* RESULTADOS */
+    .results{
+      margin-top: 18px;
+      background: linear-gradient(180deg, #0f5b63, #0b4d55);
+      border-radius: 6px;
+      box-shadow: var(--shadow);
+      overflow:hidden;
+      border: 1px solid rgba(0,0,0,.25);
+      display:none;
+    }
+
+    .resultsHeader{
+      padding: 14px 16px;
+      background: rgba(0,0,0,.22);
+      color:#eaf7f4;
+      border-bottom: 1px solid rgba(255,255,255,.10);
+    }
+    .resultsHeader .h{
+      font-size: 32px;
+      font-weight: 900;
+      margin: 0 0 6px;
+      text-align:center;
+    }
+    .resultsHeader .bigLine{
+      text-align:center;
+      font-size: 22px;
+      font-weight: 800;
+    }
+    .badgeMoney{
+      background: rgba(0,0,0,.25);
+      padding: 4px 10px;
+      border-radius: 3px;
+      display:inline-block;
+      margin-left: 10px;
+    }
+
+    .resultsBody{
+      padding: 14px 16px 18px;
+      color: #eaf7f4;
+      line-height: 1.45;
+      border-bottom: 1px solid rgba(255,255,255,.10);
+    }
+
+    .chartCard{
+      margin: 14px 16px 16px;
+      background: rgba(255,255,255,.96);
+      border-radius: 4px;
+      border: 1px solid rgba(0,0,0,.22);
+      overflow:hidden;
+    }
+    .chartTop{
+      padding: 10px 12px;
+      background: #f4f4f4;
+      border-bottom: 1px solid rgba(0,0,0,.12);
+      font-weight: 800;
+      color:#222;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+    }
+    .chartWrap{
+      position: relative;
+      padding: 10px 12px 12px;
+    }
+    canvas{ width:100%; height:320px; display:block; }
+    .legend{
+      display:flex; gap:18px; font-size: 12px; color:#333;
+      padding: 0 12px 12px;
+    }
+    .dot{
+      display:inline-block; width:10px; height:10px; border-radius:50%;
+      margin-right:6px; vertical-align:middle;
+    }
+    .dot.red{ background:#c03a36; }
+    .dot.green{ background:#2f9a86; }
+
+    .tooltip{
+      position:absolute;
+      pointer-events:none;
+      background: rgba(255,255,255,.98);
+      border:1px solid rgba(0,0,0,.25);
+      border-radius: 3px;
+      padding: 8px 10px;
+      font-size: 12px;
+      color:#111;
+      box-shadow: 0 6px 16px rgba(0,0,0,.18);
+      display:none;
+      white-space:nowrap;
+    }
+
+    .tableToggleRow{
+      padding: 0 16px 18px;
+      display:flex;
+      justify-content:center;
+    }
+
+    .tableShell{
+      display:none;
+      margin: 0 16px 16px;
+      background: rgba(255,255,255,.96);
+      border-radius: 4px;
+      border: 1px solid rgba(0,0,0,.22);
+      overflow:hidden;
+    }
+    .tableTitle{
+      padding: 10px 12px;
+      background: #f4f4f4;
+      border-bottom: 1px solid rgba(0,0,0,.12);
+      font-weight: 800;
+      color:#222;
+    }
+    table{
+      width:100%;
+      border-collapse: collapse;
+      font-size: 14px;
+      color:#111;
+    }
+    th, td{
+      padding: 10px 10px;
+      border-bottom: 1px solid rgba(0,0,0,.12);
+      text-align:left;
+    }
+    th{ background: #fafafa; }
+
+    .noteSmall{
+      font-size: 12px;
+      color: #eaf7f4;
+      opacity:.92;
+      padding: 0 16px 16px;
+    }
+
+    .twoCol{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+    @media (max-width: 760px){
+      .row{ flex-direction:column; }
+      .right{ width:100%; justify-content:flex-start; }
+      .right input, .right select{ width:100%; }
+      .twoCol{ grid-template-columns: 1fr; }
+      canvas{ height:260px; }
+    }
+  </style>
 </head>
 <body>
+  <div class="wrap">
 
-<h2>Calculadora de Interés Compuesto</h2>
+    <div class="shell" id="formShell">
+      <div class="topBar">Calculadora de interés compuesto</div>
 
-<label>Inversión inicial:</label>
-<input id="initial" type="number"><br><br>
+      <div class="section">
+        <div class="stepTitle">Paso 1: Inversión inicial</div>
+        <div class="row">
+          <div class="left">
+            <div class="label">Inversión inicial <span class="req">*</span></div>
+            <div class="help">Monto de dinero que tiene disponible para invertir inicialmente.</div>
+          </div>
+          <div class="right">
+            <input id="initial" type="number" min="0" step="0.01" value="1100">
+          </div>
+        </div>
+      </div>
 
-<label>Contribución mensual:</label>
-<input id="monthly" type="number"><br><br>
+      <div class="section">
+        <div class="stepTitle">Paso 2: Contribución</div>
 
-<label>Aumento anual contribución (%):</label>
-<input id="increase" type="number"><br><br>
+        <div class="row">
+          <div class="left">
+            <div class="label">Contribución mensual</div>
+            <div class="help">Monto que tiene previsto agregar al capital cada mes.</div>
+          </div>
+          <div class="right">
+            <input id="monthly" type="number" min="0" step="0.01" value="1000">
+          </div>
+        </div>
 
-<label>Años:</label>
-<input id="years" type="number"><br><br>
+        <div class="row">
+          <div class="left">
+            <div class="label">Aumento anual de la contribución (%)</div>
+            <div class="help">Ejemplo: si empieza con $1,000/mes y pone 10%, el año 2 será $1,100/mes, luego $1,210/mes, etc.</div>
+          </div>
+          <div class="right">
+            <input id="increase" type="number" min="0" step="0.01" value="0">
+          </div>
+        </div>
 
-<label>Tasa anual (%):</label>
-<input id="rate" type="number"><br><br>
+        <div class="row">
+          <div class="left">
+            <div class="label">Cantidad de tiempo en años <span class="req">*</span></div>
+            <div class="help">Cantidad de tiempo, en años, que tiene previsto ahorrar.</div>
+          </div>
+          <div class="right">
+            <input id="years" type="number" min="0" step="1" value="15">
+          </div>
+        </div>
+      </div>
 
-<button onclick="calcular()">Calcular</button>
+      <div class="section">
+        <div class="stepTitle">Paso 3: Tasa de interés</div>
 
-<h3 id="resultado"></h3>
+        <div class="row">
+          <div class="left">
+            <div class="label">Tasa de interés estimada <span class="req">*</span></div>
+            <div class="help">Su tasa de interés anual estimada.</div>
+          </div>
+          <div class="right">
+            <input id="rate" type="number" min="0" step="0.01" value="12">
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="left">
+            <div class="label">Rango de varianza de las tasas de interés</div>
+            <div class="help">Opcional. Si pones mínimo y máximo, verás 3 escenarios (mín / base / máx) en la tabla.</div>
+          </div>
+          <div class="right">
+            <div class="twoCol">
+              <input id="rateMin" type="number" min="0" step="0.01" placeholder="Mín (%)">
+              <input id="rateMax" type="number" min="0" step="0.01" placeholder="Máx (%)">
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="stepTitle">Paso 4: Capitalización</div>
+
+        <div class="row">
+          <div class="left">
+            <div class="label">Frecuencia de capitalización</div>
+            <div class="help">Cantidad de veces por año que se capitalizará el interés.</div>
+          </div>
+          <div class="right">
+            <select id="comp">
+              <option value="12" selected>Mensualmente</option>
+              <option value="4">Trimestralmente</option>
+              <option value="1">Anualmente</option>
+              <option value="365">Diariamente</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="btnRow">
+          <button class="btn red" id="btnCalc">CALCULAR</button>
+          <button class="btn green" id="btnReset">RESTABLECER</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- RESULTADOS -->
+    <div class="results" id="results">
+      <div class="resultsHeader">
+        <div class="h">Resultados</div>
+        <div class="bigLine">En <span id="yearsOut">0</span> años, tendrá <span class="badgeMoney" id="finalOut">$0.00</span></div>
+      </div>
+
+      <div class="resultsBody">
+        La siguiente información muestra una estimación de cuánto crecerán sus ahorros en el tiempo, según la tasa de interés y el cronograma de capitalización que especificó.
+        <br><br>
+        Recuerde que pequeños ajustes de las variables pueden afectar el resultado. Restablezca la calculadora e ingrese cifras diferentes para ver otras situaciones.
+      </div>
+
+      <div class="chartCard">
+        <div class="chartTop">
+          <div>Ahorros totales</div>
+          <div style="opacity:.7;font-size:12px">Año por año</div>
+        </div>
+        <div class="chartWrap">
+          <canvas id="chart" width="900" height="360"></canvas>
+          <div class="tooltip" id="tip"></div>
+        </div>
+        <div class="legend">
+          <div><span class="dot red"></span>Valor futuro (tasa base)</div>
+          <div><span class="dot green"></span>Contribuciones totales</div>
+        </div>
+      </div>
+
+      <div class="tableToggleRow">
+        <button class="btn gray" id="btnTable">SHOW TABLE</button>
+      </div>
+
+      <div class="tableShell" id="tableShell">
+        <div class="tableTitle">Ahorros totales en dólares estadounidenses</div>
+        <div style="overflow:auto">
+          <table id="tbl">
+            <thead>
+              <tr>
+                <th>Años</th>
+                <th>Valor futuro (tasa base)</th>
+                <th>Contribuciones totales</th>
+                <th id="thMin" style="display:none">Valor futuro (mín)</th>
+                <th id="thMax" style="display:none">Valor futuro (máx)</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="noteSmall">
+        *Si llenas el rango de tasas (mín y máx), la tabla mostrará los 3 escenarios. El gráfico se mantiene en tasa base (para que se vea limpio).
+      </div>
+
+      <div class="btnRow" style="justify-content:center;">
+        <button class="btn gray" id="btnBack">VOLVER</button>
+      </div>
+    </div>
+
+  </div>
 
 <script>
-function calcular(){
-  let P = parseFloat(document.getElementById("initial").value) || 0;
-  let PMT = parseFloat(document.getElementById("monthly").value) || 0;
-  let years = parseFloat(document.getElementById("years").value) || 0;
-  let rate = parseFloat(document.getElementById("rate").value) / 100 || 0;
-  let increase = parseFloat(document.getElementById("increase").value) / 100 || 0;
+  // Helpers
+  function money(x){
+    return x.toLocaleString('en-US', { style:'currency', currency:'USD' });
+  }
+  function clamp(n,min,max){ return Math.max(min, Math.min(max,n)); }
+  function gcd(a,b){ while(b){ [a,b]=[b,a%b]; } return a; }
+  function lcm(a,b){ return (a*b)/gcd(a,b); }
 
-  let total = P;
-  let monthlyRate = rate / 12;
+  // Simulación (mensual + capitalización m)
+  function simulate({P, PMT0, years, rateAnnual, contribGrowAnnual, compPerYear}){
+    const m = compPerYear;
+    const stepsPerYear = lcm(12, m);
+    const totalSteps = years * stepsPerYear;
 
-  for(let year = 0; year < years; year++){
-    for(let month = 0; month < 12; month++){
-      total += PMT;
-      total *= (1 + monthlyRate);
+    const contribEvery = stepsPerYear / 12;
+    const interestEvery = stepsPerYear / m;
+
+    const i = (rateAnnual) / m;
+
+    let balance = P;
+    let totalContrib = P;
+
+    const yearly = [];
+    yearly.push({ year: 0, fv: balance, contrib: totalContrib });
+
+    for(let step=1; step<=totalSteps; step++){
+      // aporte mensual
+      if(step % contribEvery === 0){
+        const monthsElapsed = step / contribEvery;
+        const yearIndex = Math.floor((monthsElapsed - 1) / 12); // 0=year1
+        const PMT = PMT0 * Math.pow(1 + contribGrowAnnual, yearIndex);
+        balance += PMT;
+        totalContrib += PMT;
+      }
+      // capitalización
+      if(step % interestEvery === 0){
+        balance *= (1 + i);
+      }
+
+      // cierre de año
+      if(step % stepsPerYear === 0){
+        const year = step / stepsPerYear;
+        yearly.push({ year, fv: balance, contrib: totalContrib });
+      }
     }
-    PMT *= (1 + increase);
+
+    return { balance, totalContrib, yearly };
   }
 
-  document.getElementById("resultado").innerText =
-    "Valor final: $" + total.toFixed(2);
-}
-</script>
+  // UI
+  const el = (id)=>document.getElementById(id);
 
+  const formShell = el('formShell');
+  const results = el('results');
+
+  const btnCalc = el('btnCalc');
+  const btnReset = el('btnReset');
+  const btnBack = el('btnBack');
+
+  const btnTable = el('btnTable');
+  const tableShell = el('tableShell');
+
+  const canvas = el('chart');
+  const ctx = canvas.getContext('2d');
+  const tip = el('tip');
+
+  let lastYearly = null;
+
+  function getInputs(){
+    const P = parseFloat(el('initial').value || "0");
+    const PMT0 = parseFloat(el('monthly').value || "0");
+    const years = Math.max(0, Math.floor(parseFloat(el('years').value || "0")));
+    const rateBase = (parseFloat(el('rate').value || "0")) / 100;
+    const inc = (parseFloat(el('increase').value || "0")) / 100;
+    const m = parseInt(el('comp').value, 10);
+
+    const rMinRaw = el('rateMin').value.trim();
+    const rMaxRaw = el('rateMax').value.trim();
+    const rMin = rMinRaw === "" ? null : (parseFloat(rMinRaw)/100);
+    const rMax = rMaxRaw === "" ? null : (parseFloat(rMaxRaw)/100);
+
+    return {P, PMT0, years, rateBase, inc, m, rMin, rMax};
+  }
+
+  function validate(inp){
+    if(inp.P < 0 || inp.PMT0 < 0 || inp.years < 0 || inp.rateBase < 0 || inp.inc < 0) return false;
+    if(isNaN(inp.P) || isNaN(inp.PMT0) || isNaN(inp.years) || isNaN(inp.rateBase) || isNaN(inp.inc)) return false;
+    return true;
+  }
+
+  function drawChart(yearly){
+    // resize for crisp
+    const dpr = window.devicePixelRatio || 1;
+    const cssW = canvas.clientWidth;
+    const cssH = canvas.clientHeight;
+    canvas.width = Math.round(cssW * dpr);
+    canvas.height = Math.round(cssH * dpr);
+    ctx.setTransform(dpr,0,0,dpr,0,0);
+
+    const W = cssW, H = cssH;
+    const padL=52, padR=18, padT=18, padB=42;
+
+    const xs = yearly.map(p=>p.year);
+    const fv = yearly.map(p=>p.fv);
+    const contrib = yearly.map(p=>p.contrib);
+
+    const maxY = Math.max(...fv, ...contrib);
+    const minY = 0;
+
+    // bg
+    ctx.clearRect(0,0,W,H);
+    ctx.fillStyle = "#fff";
+    ctx.fillRect(0,0,W,H);
+
+    // grid
+    ctx.strokeStyle = "rgba(0,0,0,.10)";
+    ctx.lineWidth = 1;
+    const gridLines = 6;
+    for(let g=0; g<=gridLines; g++){
+      const y = padT + (H-padT-padB)*(g/gridLines);
+      ctx.beginPath(); ctx.moveTo(padL,y); ctx.lineTo(W-padR,y); ctx.stroke();
+    }
+
+    // axis
+    ctx.strokeStyle = "rgba(0,0,0,.25)";
+    ctx.beginPath(); ctx.moveTo(padL,padT); ctx.lineTo(padL,H-padB); ctx.lineTo(W-padR,H-padB); ctx.stroke();
+
+    const xMin = 0, xMax = yearly[yearly.length-1].year;
+
+    const xMap = (x)=> padL + (W-padL-padR) * ((x-xMin)/(xMax-xMin || 1));
+    const yMap = (y)=> padT + (H-padT-padB) * (1 - ((y-minY)/(maxY-minY || 1)));
+
+    // y labels
+    ctx.fillStyle = "rgba(0,0,0,.75)";
+    ctx.font = "12px Arial";
+    for(let g=0; g<=gridLines; g++){
+      const v = (maxY/gridLines) * (gridLines-g);
+      const y = padT + (H-padT-padB)*(g/gridLines);
+      ctx.fillText("$" + Math.round(v).toLocaleString('en-US'), 6, y+4);
+    }
+
+    // x labels (years)
+    const step = Math.max(1, Math.floor(xMax/15));
+    for(let x=0; x<=xMax; x+=step){
+      const xx = xMap(x);
+      ctx.save();
+      ctx.translate(xx, H-padB+16);
+      ctx.rotate(-Math.PI/4);
+      ctx.fillText("Año " + x, 0, 0);
+      ctx.restore();
+    }
+
+    // line function
+    function plotLine(series, color){
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      series.forEach((v,idx)=>{
+        const xx = xMap(xs[idx]);
+        const yy = yMap(v);
+        if(idx===0) ctx.moveTo(xx,yy); else ctx.lineTo(xx,yy);
+      });
+      ctx.stroke();
+
+      // points
+      ctx.fillStyle = color;
+      series.forEach((v,idx)=>{
+        const xx = xMap(xs[idx]);
+        const yy = yMap(v);
+        ctx.beginPath();
+        ctx.arc(xx,yy,3.5,0,Math.PI*2);
+        ctx.fill();
+      });
+    }
+
+    plotLine(fv, "#c03a36");       // rojo
+    plotLine(contrib, "#2f9a86");  // verde
+
+    // store points for hover
+    return { xMap, yMap, xs, fv, contrib, padL, padR, padT, padB, W, H };
+  }
+
+  function fillTable(yearly, yearlyMin, yearlyMax){
+    const tbody = el('tbl').querySelector('tbody');
+    tbody.innerHTML = "";
+
+    const showMinMax = !!(yearlyMin && yearlyMax);
+    el('thMin').style.display = showMinMax ? "" : "none";
+    el('thMax').style.display = showMinMax ? "" : "none";
+
+    for(let i=0;i<yearly.length;i++){
+      const y = yearly[i];
+      const tr = document.createElement('tr');
+
+      const tdYear = document.createElement('td'); tdYear.textContent = "Año " + y.year;
+      const tdFV = document.createElement('td'); tdFV.textContent = money(y.fv);
+      const tdC = document.createElement('td'); tdC.textContent = money(y.contrib);
+
+      tr.appendChild(tdYear);
+      tr.appendChild(tdFV);
+      tr.appendChild(tdC);
+
+      if(showMinMax){
+        const tdMin = document.createElement('td'); tdMin.textContent = money(yearlyMin[i].fv);
+        const tdMax = document.createElement('td'); tdMax.textContent = money(yearlyMax[i].fv);
+        tr.appendChild(tdMin);
+        tr.appendChild(tdMax);
+      }
+
+      tbody.appendChild(tr);
+    }
+  }
+
+  let chartState = null;
+
+  function showResults(){
+    formShell.style.display = "none";
+    results.style.display = "block";
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  function showForm(){
+    results.style.display = "none";
+    formShell.style.display = "block";
+    tableShell.style.display = "none";
+    btnTable.textContent = "SHOW TABLE";
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  function calc(){
+    const inp = getInputs();
+    if(!validate(inp)){
+      alert("Revisa tus números (no pueden estar vacíos o negativos).");
+      return;
+    }
+
+    const base = simulate({
+      P: inp.P,
+      PMT0: inp.PMT0,
+      years: inp.years,
+      rateAnnual: inp.rateBase,
+      contribGrowAnnual: inp.inc,
+      compPerYear: inp.m
+    });
+
+    // min/max opcional para tabla
+    let minSim = null, maxSim = null;
+    if(inp.rMin !== null && inp.rMax !== null && inp.rMax >= inp.rMin){
+      minSim = simulate({ P: inp.P, PMT0: inp.PMT0, years: inp.years, rateAnnual: inp.rMin, contribGrowAnnual: inp.inc, compPerYear: inp.m });
+      maxSim = simulate({ P: inp.P, PMT0: inp.PMT0, years: inp.years, rateAnnual: inp.rMax, contribGrowAnnual: inp.inc, compPerYear: inp.m });
+    }
+
+    el('yearsOut').textContent = inp.years.toString();
+    el('finalOut').textContent = money(base.balance);
+
+    lastYearly = base.yearly;
+
+    // chart
+    chartState = drawChart(base.yearly);
+
+    // table
+    fillTable(base.yearly, minSim ? minSim.yearly : null, maxSim ? maxSim.yearly : null);
+
+    showResults();
+  }
+
+  function resetAll(){
+    el('initial').value = "0";
+    el('monthly').value = "0";
+    el('increase').value = "0";
+    el('years').value = "0";
+    el('rate').value = "0";
+    el('rateMin').value = "";
+    el('rateMax').value = "";
+    el('comp').value = "12";
+    showForm();
+  }
+
+  // Hover tooltip
+  canvas.addEventListener('mousemove', (e)=>{
+    if(!chartState || !lastYearly) return;
+
+    const rect = canvas.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+
+    // find nearest year point by x
+    const ptsX = chartState.xs.map(yr => chartState.xMap(yr));
+    let bestIdx = 0;
+    let bestDist = Infinity;
+    for(let i=0;i<ptsX.length;i++){
+      const d = Math.abs(ptsX[i] - x);
+      if(d < bestDist){ bestDist = d; bestIdx = i; }
+    }
+    if(bestDist > 28){
+      tip.style.display = "none";
+      return;
+    }
+
+    const y = lastYearly[bestIdx].year;
+    const fv = lastYearly[bestIdx].fv;
+    const c = lastYearly[bestIdx].contrib;
+
+    tip.innerHTML = `
+      <div><b>Año ${y}</b></div>
+      <div style="margin-top:4px"><span style="color:#c03a36;font-weight:900">●</span> Valor futuro: ${money(fv)}</div>
+      <div><span style="color:#2f9a86;font-weight:900">●</span> Contribuciones totales: ${money(c)}</div>
+    `;
+
+    tip.style.left = clamp(ptsX[bestIdx] + 10, 10, rect.width - 260) + "px";
+    tip.style.top = "20px";
+    tip.style.display = "block";
+  });
+
+  canvas.addEventListener('mouseleave', ()=> tip.style.display = "none");
+
+  // Buttons
+  btnCalc.addEventListener('click', calc);
+  btnReset.addEventListener('click', resetAll);
+  btnBack.addEventListener('click', showForm);
+
+  btnTable.addEventListener('click', ()=>{
+    const isOpen = tableShell.style.display === "block";
+    tableShell.style.display = isOpen ? "none" : "block";
+    btnTable.textContent = isOpen ? "SHOW TABLE" : "HIDE TABLE";
+    if(!isOpen) tableShell.scrollIntoView({behavior:"smooth", block:"start"});
+  });
+
+  // Re-draw on resize
+  window.addEventListener('resize', ()=>{
+    if(lastYearly && results.style.display === "block"){
+      chartState = drawChart(lastYearly);
+    }
+  });
+</script>
 </body>
 </html>
