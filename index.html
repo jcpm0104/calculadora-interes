@@ -9,10 +9,6 @@
       --bg:#f3efe6;
       --panel:#0f5b63;
       --panel2:#0a4750;
-      --bar:#0b3f46;
-      --line:#d9d9d9;
-      --card:#ffffff;
-      --ink:#0a0a0a;
       --muted:#d7efe9;
       --btnRed:#b1362f;
       --btnGreen:#2e7d32;
@@ -23,7 +19,7 @@
       margin:0;
       font-family: Arial, Helvetica, sans-serif;
       background: var(--bg);
-      color: var(--ink);
+      color: #0a0a0a;
     }
 
     .wrap{
@@ -69,14 +65,9 @@
       padding: 14px;
       color: #eaf7f4;
     }
-
     .row + .row{ border-top: 1px solid rgba(255,255,255,.10); }
 
-    .left{
-      flex: 1;
-      min-width: 220px;
-    }
-
+    .left{ flex: 1; min-width: 220px; }
     .right{
       width: 260px;
       min-width: 200px;
@@ -84,10 +75,7 @@
       justify-content:flex-end;
     }
 
-    .label{
-      font-weight: 700;
-      margin-bottom: 6px;
-    }
+    .label{ font-weight: 700; margin-bottom: 6px; }
     .help{
       font-size: 12px;
       color: var(--muted);
@@ -96,7 +84,7 @@
     }
 
     input, select{
-      width: 180px;
+      width: 200px;
       padding: 10px 10px;
       font-size: 16px;
       border: 1px solid rgba(0,0,0,.25);
@@ -105,7 +93,6 @@
       outline: none;
       box-shadow: inset 0 1px 2px rgba(0,0,0,.06);
     }
-    .right input, .right select{ width: 200px; }
 
     .req{ color: #ff6b6b; font-weight: 900; margin-left: 4px; }
 
@@ -151,7 +138,7 @@
       border-bottom: 1px solid rgba(255,255,255,.10);
     }
     .resultsHeader .h{
-      font-size: 32px;
+      font-size: 34px;
       font-weight: 900;
       margin: 0 0 6px;
       text-align:center;
@@ -197,7 +184,15 @@
       position: relative;
       padding: 10px 12px 12px;
     }
-    canvas{ width:100%; height:320px; display:block; }
+
+    /* ✅ IMPORTANTE: darle tamaño REAL al canvas */
+    canvas{
+      width:100%;
+      height:340px;
+      display:block;
+      background: #fff;
+    }
+
     .legend{
       display:flex; gap:18px; font-size: 12px; color:#333;
       padding: 0 12px 12px;
@@ -272,9 +267,9 @@
     @media (max-width: 760px){
       .row{ flex-direction:column; }
       .right{ width:100%; justify-content:flex-start; }
-      .right input, .right select{ width:100%; }
+      input, select{ width:100%; }
       .twoCol{ grid-template-columns: 1fr; }
-      canvas{ height:260px; }
+      canvas{ height:280px; }
     }
   </style>
 </head>
@@ -402,7 +397,7 @@
           <div style="opacity:.7;font-size:12px">Año por año</div>
         </div>
         <div class="chartWrap">
-          <canvas id="chart" width="900" height="360"></canvas>
+          <canvas id="chart"></canvas>
           <div class="tooltip" id="tip"></div>
         </div>
         <div class="legend">
@@ -453,7 +448,7 @@
   function gcd(a,b){ while(b){ [a,b]=[b,a%b]; } return a; }
   function lcm(a,b){ return (a*b)/gcd(a,b); }
 
-  // Simulación (mensual + capitalización m)
+  // Simulación: aportes mensuales + capitalización compPerYear
   function simulate({P, PMT0, years, rateAnnual, contribGrowAnnual, compPerYear}){
     const m = compPerYear;
     const stepsPerYear = lcm(12, m);
@@ -512,6 +507,7 @@
   const tip = el('tip');
 
   let lastYearly = null;
+  let chartState = null;
 
   function getInputs(){
     const P = parseFloat(el('initial').value || "0");
@@ -531,21 +527,39 @@
 
   function validate(inp){
     if(inp.P < 0 || inp.PMT0 < 0 || inp.years < 0 || inp.rateBase < 0 || inp.inc < 0) return false;
-    if(isNaN(inp.P) || isNaN(inp.PMT0) || isNaN(inp.years) || isNaN(inp.rateBase) || isNaN(inp.inc)) return false;
+    if([inp.P,inp.PMT0,inp.years,inp.rateBase,inp.inc].some(v => Number.isNaN(v))) return false;
     return true;
   }
 
+  function showResults(){
+    formShell.style.display = "none";
+    results.style.display = "block";
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  function showForm(){
+    results.style.display = "none";
+    formShell.style.display = "block";
+    tableShell.style.display = "none";
+    btnTable.textContent = "SHOW TABLE";
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
   function drawChart(yearly){
-    // resize for crisp
+    // ✅ Clave: usar el tamaño real en pantalla
     const dpr = window.devicePixelRatio || 1;
-    const cssW = canvas.clientWidth;
-    const cssH = canvas.clientHeight;
-    canvas.width = Math.round(cssW * dpr);
-    canvas.height = Math.round(cssH * dpr);
+
+    const rect = canvas.getBoundingClientRect();
+    const cssW = Math.max(1, Math.floor(rect.width));
+    const cssH = Math.max(1, Math.floor(rect.height));
+
+    canvas.width  = Math.floor(cssW * dpr);
+    canvas.height = Math.floor(cssH * dpr);
+
     ctx.setTransform(dpr,0,0,dpr,0,0);
 
     const W = cssW, H = cssH;
-    const padL=52, padR=18, padT=18, padB=42;
+    const padL=62, padR=18, padT=18, padB=54;
 
     const xs = yearly.map(p=>p.year);
     const fv = yearly.map(p=>p.fv);
@@ -570,10 +584,13 @@
 
     // axis
     ctx.strokeStyle = "rgba(0,0,0,.25)";
-    ctx.beginPath(); ctx.moveTo(padL,padT); ctx.lineTo(padL,H-padB); ctx.lineTo(W-padR,H-padB); ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(padL,padT);
+    ctx.lineTo(padL,H-padB);
+    ctx.lineTo(W-padR,H-padB);
+    ctx.stroke();
 
     const xMin = 0, xMax = yearly[yearly.length-1].year;
-
     const xMap = (x)=> padL + (W-padL-padR) * ((x-xMin)/(xMax-xMin || 1));
     const yMap = (y)=> padT + (H-padT-padB) * (1 - ((y-minY)/(maxY-minY || 1)));
 
@@ -583,24 +600,23 @@
     for(let g=0; g<=gridLines; g++){
       const v = (maxY/gridLines) * (gridLines-g);
       const y = padT + (H-padT-padB)*(g/gridLines);
-      ctx.fillText("$" + Math.round(v).toLocaleString('en-US'), 6, y+4);
+      ctx.fillText("$" + Math.round(v).toLocaleString('en-US'), 8, y+4);
     }
 
-    // x labels (years)
+    // x labels
     const step = Math.max(1, Math.floor(xMax/15));
     for(let x=0; x<=xMax; x+=step){
       const xx = xMap(x);
       ctx.save();
-      ctx.translate(xx, H-padB+16);
+      ctx.translate(xx, H-padB+22);
       ctx.rotate(-Math.PI/4);
       ctx.fillText("Año " + x, 0, 0);
       ctx.restore();
     }
 
-    // line function
     function plotLine(series, color){
       ctx.strokeStyle = color;
-      ctx.lineWidth = 2;
+      ctx.lineWidth = 3;  // ✅ más visible
       ctx.beginPath();
       series.forEach((v,idx)=>{
         const xx = xMap(xs[idx]);
@@ -609,22 +625,20 @@
       });
       ctx.stroke();
 
-      // points
       ctx.fillStyle = color;
       series.forEach((v,idx)=>{
         const xx = xMap(xs[idx]);
         const yy = yMap(v);
         ctx.beginPath();
-        ctx.arc(xx,yy,3.5,0,Math.PI*2);
+        ctx.arc(xx,yy,4.2,0,Math.PI*2); // ✅ puntos más visibles
         ctx.fill();
       });
     }
 
-    plotLine(fv, "#c03a36");       // rojo
-    plotLine(contrib, "#2f9a86");  // verde
+    plotLine(fv, "#c03a36");
+    plotLine(contrib, "#2f9a86");
 
-    // store points for hover
-    return { xMap, yMap, xs, fv, contrib, padL, padR, padT, padB, W, H };
+    return { xMap, xs, fv, contrib };
   }
 
   function fillTable(yearly, yearlyMin, yearlyMax){
@@ -658,22 +672,6 @@
     }
   }
 
-  let chartState = null;
-
-  function showResults(){
-    formShell.style.display = "none";
-    results.style.display = "block";
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  }
-
-  function showForm(){
-    results.style.display = "none";
-    formShell.style.display = "block";
-    tableShell.style.display = "none";
-    btnTable.textContent = "SHOW TABLE";
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  }
-
   function calc(){
     const inp = getInputs();
     if(!validate(inp)){
@@ -690,7 +688,6 @@
       compPerYear: inp.m
     });
 
-    // min/max opcional para tabla
     let minSim = null, maxSim = null;
     if(inp.rMin !== null && inp.rMax !== null && inp.rMax >= inp.rMin){
       minSim = simulate({ P: inp.P, PMT0: inp.PMT0, years: inp.years, rateAnnual: inp.rMin, contribGrowAnnual: inp.inc, compPerYear: inp.m });
@@ -702,13 +699,18 @@
 
     lastYearly = base.yearly;
 
-    // chart
-    chartState = drawChart(base.yearly);
-
-    // table
+    // table primero
     fillTable(base.yearly, minSim ? minSim.yearly : null, maxSim ? maxSim.yearly : null);
 
+    // ✅ IMPORTANTE: mostrar resultados primero, luego dibujar el gráfico
     showResults();
+
+    // ✅ doble requestAnimationFrame para asegurar que ya tiene tamaño real
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        chartState = drawChart(base.yearly);
+      });
+    });
   }
 
   function resetAll(){
@@ -723,14 +725,13 @@
     showForm();
   }
 
-  // Hover tooltip
+  // Tooltip
   canvas.addEventListener('mousemove', (e)=>{
     if(!chartState || !lastYearly) return;
 
     const rect = canvas.getBoundingClientRect();
     const x = e.clientX - rect.left;
 
-    // find nearest year point by x
     const ptsX = chartState.xs.map(yr => chartState.xMap(yr));
     let bestIdx = 0;
     let bestDist = Infinity;
@@ -738,7 +739,7 @@
       const d = Math.abs(ptsX[i] - x);
       if(d < bestDist){ bestDist = d; bestIdx = i; }
     }
-    if(bestDist > 28){
+    if(bestDist > 30){
       tip.style.display = "none";
       return;
     }
@@ -772,10 +773,12 @@
     if(!isOpen) tableShell.scrollIntoView({behavior:"smooth", block:"start"});
   });
 
-  // Re-draw on resize
+  // Re-draw on resize (si estás en resultados)
   window.addEventListener('resize', ()=>{
     if(lastYearly && results.style.display === "block"){
-      chartState = drawChart(lastYearly);
+      requestAnimationFrame(() => {
+        chartState = drawChart(lastYearly);
+      });
     }
   });
 </script>
