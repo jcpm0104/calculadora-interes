@@ -14,6 +14,9 @@
 <label>Contribución mensual:</label>
 <input id="monthly" type="number"><br><br>
 
+<label>Aumento anual contribución (%):</label>
+<input id="increase" type="number"><br><br>
+
 <label>Años:</label>
 <input id="years" type="number"><br><br>
 
@@ -30,15 +33,17 @@ function calcular(){
   let PMT = parseFloat(document.getElementById("monthly").value) || 0;
   let years = parseFloat(document.getElementById("years").value) || 0;
   let rate = parseFloat(document.getElementById("rate").value) / 100 || 0;
-
-  let months = years * 12;
-  let monthlyRate = rate / 12;
+  let increase = parseFloat(document.getElementById("increase").value) / 100 || 0;
 
   let total = P;
+  let monthlyRate = rate / 12;
 
-  for(let i=0; i<months; i++){
-    total += PMT;
-    total *= (1 + monthlyRate);
+  for(let year = 0; year < years; year++){
+    for(let month = 0; month < 12; month++){
+      total += PMT;
+      total *= (1 + monthlyRate);
+    }
+    PMT *= (1 + increase);
   }
 
   document.getElementById("resultado").innerText =
