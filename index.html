@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Calculadora Interés</title>
+</head>
+<body>
+
+<h2>Calculadora de Interés Compuesto</h2>
+
+<label>Inversión inicial:</label>
+<input id="initial" type="number"><br><br>
+
+<label>Contribución mensual:</label>
+<input id="monthly" type="number"><br><br>
+
+<label>Años:</label>
+<input id="years" type="number"><br><br>
+
+<label>Tasa anual (%):</label>
+<input id="rate" type="number"><br><br>
+
+<button onclick="calcular()">Calcular</button>
+
+<h3 id="resultado"></h3>
+
+<script>
+function calcular(){
+  let P = parseFloat(document.getElementById("initial").value) || 0;
+  let PMT = parseFloat(document.getElementById("monthly").value) || 0;
+  let years = parseFloat(document.getElementById("years").value) || 0;
+  let rate = parseFloat(document.getElementById("rate").value) / 100 || 0;
+
+  let months = years * 12;
+  let monthlyRate = rate / 12;
+
+  let total = P;
+
+  for(let i=0; i<months; i++){
+    total += PMT;
+    total *= (1 + monthlyRate);
+  }
+
+  document.getElementById("resultado").innerText =
+    "Valor final: $" + total.toFixed(2);
+}
+</script>
+
+</body>
+</html>
