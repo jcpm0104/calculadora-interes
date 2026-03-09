@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>US Tax Calculator</title>
+<style>
+body{
+font-family:Arial;
+background:#f4f6f9;
+padding:30px;
+}
+.container{
+background:white;
+padding:25px;
+border-radius:10px;
+max-width:500px;
+margin:auto;
+box-shadow:0 5px 15px rgba(0,0,0,0.1);
+}
+input,select{
+width:100%;
+padding:10px;
+margin-top:10px;
+margin-bottom:15px;
+}
+button{
+background:#007aff;
+color:white;
+border:none;
+padding:12px;
+width:100%;
+font-size:16px;
+border-radius:8px;
+}
+.result{
+margin-top:20px;
+font-size:18px;
+font-weight:bold;
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+<h2>US Tax Calculator</h2>
+
+<label>Filing Status</label>
+<select id="status">
+<option value="single">Single</option>
+<option value="married">Married Filing Jointly</option>
+</select>
+
+<label>W-2 Income</label>
+<input id="w2" type="number" placeholder="0">
+
+<label>Self Employment Income (1099)</label>
+<input id="self" type="number" placeholder="0">
+
+<label>Trading / Investments</label>
+<input id="trading" type="number" placeholder="0">
+
+<label>Federal Tax Withheld</label>
+<input id="withheld" type="number" placeholder="0">
+
+<button onclick="calculate()">Calculate</button>
+
+<div class="result" id="result"></div>
+
+</div>
+
+<script>
+
+function calculate(){
+
+let w2 = Number(document.getElementById("w2").value) || 0
+let self = Number(document.getElementById("self").value) || 0
+let trading = Number(document.getElementById("trading").value) || 0
+let withheld = Number(document.getElementById("withheld").value) || 0
+
+let income = w2 + self + trading
+
+let deduction = 14600
+
+let taxable = Math.max(0, income - deduction)
+
+let tax = taxable * 0.12
+
+let selfTax = self * 0.153
+
+let totalTax = tax + selfTax
+
+let refund = withheld - totalTax
+
+let text
+
+if(refund >= 0){
+text = "Estimated Refund: $" + refund.toFixed(2)
+}else{
+text = "Taxes Owed: $" + Math.abs(refund).toFixed(2)
+}
+
+document.getElementById("result").innerHTML = text
+
+}
+
+</script>
+
+</body>
+</html>
