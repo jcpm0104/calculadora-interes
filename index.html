@@ -1,786 +1,1302 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Calculadora de interés compuesto</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Complete US Tax Calculator</title>
   <style>
-    :root{
-      --bg:#f3efe6;
-      --panel:#0f5b63;
-      --panel2:#0a4750;
-      --muted:#d7efe9;
-      --btnRed:#b1362f;
-      --btnGreen:#2e7d32;
-      --shadow: 0 10px 24px rgba(0,0,0,.18);
+    :root {
+      --bg: #0f172a;
+      --card: #ffffff;
+      --muted: #64748b;
+      --line: #e2e8f0;
+      --soft: #f8fafc;
+      --accent: #2563eb;
+      --good: #166534;
+      --warn: #92400e;
     }
-
-    body{
-      margin:0;
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
       font-family: Arial, Helvetica, sans-serif;
+      background: linear-gradient(180deg, #eaf2ff 0%, #f8fbff 100%);
+      color: #0f172a;
+      padding: 24px;
+    }
+    .wrap {
+      max-width: 1180px;
+      margin: 0 auto;
+    }
+    .hero {
       background: var(--bg);
-      color: #0a0a0a;
+      color: white;
+      border-radius: 18px;
+      padding: 24px;
+      margin-bottom: 20px;
+      box-shadow: 0 14px 30px rgba(15, 23, 42, 0.18);
     }
-
-    .wrap{
-      max-width: 980px;
-      margin: 22px auto 60px;
-      padding: 0 16px;
+    .hero h1 {
+      margin: 0 0 10px;
+      font-size: 30px;
     }
-
-    .shell{
-      background: linear-gradient(180deg, var(--panel), var(--panel2));
-      border-radius: 6px;
-      box-shadow: var(--shadow);
-      overflow: hidden;
-      border: 1px solid rgba(0,0,0,.25);
+    .hero p {
+      margin: 0;
+      color: #cbd5e1;
+      line-height: 1.55;
     }
-
-    .topBar{
-      background: #0a2f34;
-      padding: 14px 16px;
-      border-bottom: 1px solid rgba(255,255,255,.10);
-      color: #e7f7f3;
-      font-weight: 700;
-      letter-spacing: .2px;
+    .grid {
+      display: grid;
+      grid-template-columns: 1.2fr 0.8fr;
+      gap: 20px;
     }
-
-    .section{
-      padding: 0;
-      border-top: 1px solid rgba(255,255,255,.10);
+    .card {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      padding: 20px;
+      box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
     }
-
-    .stepTitle{
-      background: rgba(0,0,0,.20);
-      color: #e8f7f3;
-      padding: 10px 14px;
-      font-weight: 700;
-      border-bottom: 1px solid rgba(255,255,255,.10);
-    }
-
-    .row{
-      display:flex;
-      gap:16px;
-      align-items:flex-start;
-      padding: 14px;
-      color: #eaf7f4;
-    }
-    .row + .row{ border-top: 1px solid rgba(255,255,255,.10); }
-
-    .left{ flex: 1; min-width: 220px; }
-    .right{
-      width: 260px;
-      min-width: 200px;
-      display:flex;
-      justify-content:flex-end;
-    }
-
-    .label{ font-weight: 700; margin-bottom: 6px; }
-    .help{
-      font-size: 12px;
-      color: var(--muted);
-      line-height: 1.35;
-      opacity: .95;
-    }
-
-    input, select{
-      width: 200px;
-      padding: 10px 10px;
-      font-size: 16px;
-      border: 1px solid rgba(0,0,0,.25);
-      border-radius: 2px;
-      background: #fff;
-      outline: none;
-      box-shadow: inset 0 1px 2px rgba(0,0,0,.06);
-    }
-
-    .req{ color: #ff6b6b; font-weight: 900; margin-left: 4px; }
-
-    .btnRow{
-      display:flex;
-      justify-content:flex-end;
-      gap:12px;
-      padding: 14px;
-      background: rgba(0,0,0,.18);
-      border-top: 1px solid rgba(255,255,255,.10);
-    }
-
-    .btn{
-      border: 1px solid rgba(255,255,255,.20);
-      color: #fff;
-      font-weight: 800;
-      padding: 10px 16px;
-      border-radius: 2px;
-      cursor: pointer;
-      letter-spacing: .3px;
-      box-shadow: 0 3px 10px rgba(0,0,0,.25);
-    }
-    .btn.red{ background: linear-gradient(#c6423a, var(--btnRed)); }
-    .btn.green{ background: linear-gradient(#3b9341, var(--btnGreen)); }
-    .btn.gray{ background: linear-gradient(#3b3b3b, #232323); }
-    .btn:active{ transform: translateY(1px); }
-
-    /* RESULTADOS */
-    .results{
-      margin-top: 18px;
-      background: linear-gradient(180deg, #0f5b63, #0b4d55);
-      border-radius: 6px;
-      box-shadow: var(--shadow);
-      overflow:hidden;
-      border: 1px solid rgba(0,0,0,.25);
-      display:none;
-    }
-
-    .resultsHeader{
-      padding: 14px 16px;
-      background: rgba(0,0,0,.22);
-      color:#eaf7f4;
-      border-bottom: 1px solid rgba(255,255,255,.10);
-    }
-    .resultsHeader .h{
-      font-size: 34px;
-      font-weight: 900;
-      margin: 0 0 6px;
-      text-align:center;
-    }
-    .resultsHeader .bigLine{
-      text-align:center;
+    h2 {
+      margin: 0 0 14px;
       font-size: 22px;
-      font-weight: 800;
     }
-    .badgeMoney{
-      background: rgba(0,0,0,.25);
-      padding: 4px 10px;
-      border-radius: 3px;
-      display:inline-block;
-      margin-left: 10px;
+    h3 {
+      margin: 0 0 12px;
+      font-size: 18px;
     }
-
-    .resultsBody{
-      padding: 14px 16px 18px;
-      color: #eaf7f4;
-      line-height: 1.45;
-      border-bottom: 1px solid rgba(255,255,255,.10);
-    }
-
-    .chartCard{
-      margin: 14px 16px 16px;
-      background: rgba(255,255,255,.96);
-      border-radius: 4px;
-      border: 1px solid rgba(0,0,0,.22);
-      overflow:hidden;
-    }
-    .chartTop{
-      padding: 10px 12px;
-      background: #f4f4f4;
-      border-bottom: 1px solid rgba(0,0,0,.12);
-      font-weight: 800;
-      color:#222;
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-    }
-    .chartWrap{
-      position: relative;
-      padding: 10px 12px 12px;
-    }
-
-    /* ✅ IMPORTANTE: darle tamaño REAL al canvas */
-    canvas{
-      width:100%;
-      height:340px;
-      display:block;
-      background: #fff;
-    }
-
-    .legend{
-      display:flex; gap:18px; font-size: 12px; color:#333;
-      padding: 0 12px 12px;
-    }
-    .dot{
-      display:inline-block; width:10px; height:10px; border-radius:50%;
-      margin-right:6px; vertical-align:middle;
-    }
-    .dot.red{ background:#c03a36; }
-    .dot.green{ background:#2f9a86; }
-
-    .tooltip{
-      position:absolute;
-      pointer-events:none;
-      background: rgba(255,255,255,.98);
-      border:1px solid rgba(0,0,0,.25);
-      border-radius: 3px;
-      padding: 8px 10px;
-      font-size: 12px;
-      color:#111;
-      box-shadow: 0 6px 16px rgba(0,0,0,.18);
-      display:none;
-      white-space:nowrap;
-    }
-
-    .tableToggleRow{
-      padding: 0 16px 18px;
-      display:flex;
-      justify-content:center;
-    }
-
-    .tableShell{
-      display:none;
-      margin: 0 16px 16px;
-      background: rgba(255,255,255,.96);
-      border-radius: 4px;
-      border: 1px solid rgba(0,0,0,.22);
-      overflow:hidden;
-    }
-    .tableTitle{
-      padding: 10px 12px;
-      background: #f4f4f4;
-      border-bottom: 1px solid rgba(0,0,0,.12);
-      font-weight: 800;
-      color:#222;
-    }
-    table{
-      width:100%;
-      border-collapse: collapse;
+    .subtext {
+      color: var(--muted);
       font-size: 14px;
-      color:#111;
+      line-height: 1.5;
+      margin-bottom: 14px;
     }
-    th, td{
-      padding: 10px 10px;
-      border-bottom: 1px solid rgba(0,0,0,.12);
-      text-align:left;
+    .row {
+      display: grid;
+      grid-template-columns: repeat(12, 1fr);
+      gap: 12px;
+      margin-bottom: 12px;
     }
-    th{ background: #fafafa; }
-
-    .noteSmall{
-      font-size: 12px;
-      color: #eaf7f4;
-      opacity:.92;
-      padding: 0 16px 16px;
+    .field {
+      grid-column: span 12;
     }
-
-    .twoCol{
-      display:grid;
-      grid-template-columns: 1fr 1fr;
+    .span-6 { grid-column: span 6; }
+    .span-4 { grid-column: span 4; }
+    .span-3 { grid-column: span 3; }
+    .span-2 { grid-column: span 2; }
+    label {
+      display: block;
+      font-size: 13px;
+      font-weight: 700;
+      margin-bottom: 6px;
+      color: #1e293b;
+    }
+    input, select {
+      width: 100%;
+      padding: 12px 12px;
+      border: 1px solid #cbd5e1;
+      border-radius: 12px;
+      font-size: 15px;
+      outline: none;
+      background: white;
+    }
+    input:focus, select:focus {
+      border-color: #93c5fd;
+      box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.12);
+    }
+    button {
+      border: none;
+      border-radius: 12px;
+      padding: 13px 18px;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    .primary {
+      background: var(--accent);
+      color: white;
+    }
+    .secondary {
+      background: #e2e8f0;
+      color: #0f172a;
+    }
+    .btns {
+      display: flex;
+      flex-wrap: wrap;
       gap: 10px;
+      margin-top: 12px;
     }
-    @media (max-width: 760px){
-      .row{ flex-direction:column; }
-      .right{ width:100%; justify-content:flex-start; }
-      input, select{ width:100%; }
-      .twoCol{ grid-template-columns: 1fr; }
-      canvas{ height:280px; }
+    .income-row {
+      border: 1px solid var(--line);
+      background: var(--soft);
+      border-radius: 16px;
+      padding: 14px;
+      margin-bottom: 12px;
+    }
+    .income-row .remove {
+      background: #fee2e2;
+      color: #991b1b;
+      padding: 10px 12px;
+      width: 100%;
+    }
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+    .pill {
+      background: #eff6ff;
+      border: 1px solid #bfdbfe;
+      border-radius: 16px;
+      padding: 14px;
+    }
+    .pill small {
+      display: block;
+      color: var(--muted);
+      margin-bottom: 6px;
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .pill strong {
+      font-size: 22px;
+      word-break: break-word;
+    }
+    .result-box {
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      overflow: hidden;
+    }
+    .result-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 18px;
+      padding: 12px 14px;
+      border-bottom: 1px solid var(--line);
+      background: white;
+    }
+    .result-row:nth-child(odd) {
+      background: #fcfdff;
+    }
+    .result-row:last-child {
+      border-bottom: none;
+    }
+    .result-row span:first-child {
+      color: #334155;
+    }
+    .result-row span:last-child {
+      font-weight: 700;
+      text-align: right;
+    }
+    .note {
+      margin-top: 14px;
+      background: #fffbeb;
+      border: 1px solid #fde68a;
+      color: #78350f;
+      padding: 14px;
+      border-radius: 14px;
+      line-height: 1.5;
+      font-size: 14px;
+    }
+    .list {
+      margin: 10px 0 0;
+      padding-left: 18px;
+      line-height: 1.55;
+      color: #475569;
+    }
+    .footer-note {
+      margin-top: 16px;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.6;
+    }
+    .green { color: var(--good); }
+    .orange { color: var(--warn); }
+    .hidden { display: none !important; }
+    @media (max-width: 940px) {
+      .grid { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 700px) {
+      .span-6, .span-4, .span-3, .span-2 { grid-column: span 12; }
+      .summary-grid { grid-template-columns: 1fr; }
+      .hero h1 { font-size: 24px; }
     }
   </style>
 </head>
 <body>
   <div class="wrap">
+    <section class="hero">
+      <h1>Complete US Tax Calculator</h1>
+      <p>
+        Estimate federal taxes for different income types in one place: W-2 wages, 1099-NEC,
+        1099-K business income, 1099-B short-term trading, 1099-B long-term capital gains,
+        1099-DIV qualified and ordinary dividends, 1099-INT interest, rental/other ordinary income,
+        plus withholding and estimated payments.
+      </p>
+    </section>
 
-    <div class="shell" id="formShell">
-      <div class="topBar">Calculadora de interés compuesto</div>
-
-      <div class="section">
-        <div class="stepTitle">Paso 1: Inversión inicial</div>
-        <div class="row">
-          <div class="left">
-            <div class="label">Inversión inicial <span class="req">*</span></div>
-            <div class="help">Monto de dinero que tiene disponible para invertir inicialmente.</div>
-          </div>
-          <div class="right">
-            <input id="initial" type="number" min="0" step="0.01" value="1100">
-          </div>
-        </div>
-      </div>
-
-      <div class="section">
-        <div class="stepTitle">Paso 2: Contribución</div>
-
-        <div class="row">
-          <div class="left">
-            <div class="label">Contribución mensual</div>
-            <div class="help">Monto que tiene previsto agregar al capital cada mes.</div>
-          </div>
-          <div class="right">
-            <input id="monthly" type="number" min="0" step="0.01" value="1000">
-          </div>
+    <div class="grid">
+      <section class="card">
+        <h2>Inputs</h2>
+        <div class="subtext">
+          This version is built for quick planning and scenario testing. It estimates federal tax using 2025 rules and focuses on the most common income types.
         </div>
 
         <div class="row">
-          <div class="left">
-            <div class="label">Aumento anual de la contribución (%)</div>
-            <div class="help">Ejemplo: si empieza con $1,000/mes y pone 10%, el año 2 será $1,100/mes, luego $1,210/mes, etc.</div>
+          <div class="field span-4">
+            <label for="filingStatus">Filing status</label>
+            <select id="filingStatus">
+              <option value="single">Single</option>
+              <option value="mfj">Married Filing Jointly</option>
+              <option value="mfs">Married Filing Separately</option>
+              <option value="hoh">Head of Household</option>
+            </select>
           </div>
-          <div class="right">
-            <input id="increase" type="number" min="0" step="0.01" value="0">
-          </div>
-        </div>
+          <div class="field span-4">
+            <label for="state">State</label>
+            <select id="state">
 
-        <div class="row">
-          <div class="left">
-            <div class="label">Cantidad de tiempo en años <span class="req">*</span></div>
-            <div class="help">Cantidad de tiempo, en años, que tiene previsto ahorrar.</div>
+              <option value="AL">Alabama</option>
+              <option value="AK">Alaska</option>
+              <option value="AZ">Arizona</option>
+              <option value="AR">Arkansas</option>
+              <option value="CA">California</option>
+              <option value="CO">Colorado</option>
+              <option value="CT">Connecticut</option>
+              <option value="DE">Delaware</option>
+              <option value="FL" selected>Florida</option>
+              <option value="GA">Georgia</option>
+              <option value="HI">Hawaii</option>
+              <option value="ID">Idaho</option>
+              <option value="IL">Illinois</option>
+              <option value="IN">Indiana</option>
+              <option value="IA">Iowa</option>
+              <option value="KS">Kansas</option>
+              <option value="KY">Kentucky</option>
+              <option value="LA">Louisiana</option>
+              <option value="ME">Maine</option>
+              <option value="MD">Maryland</option>
+              <option value="MA">Massachusetts</option>
+              <option value="MI">Michigan</option>
+              <option value="MN">Minnesota</option>
+              <option value="MS">Mississippi</option>
+              <option value="MO">Missouri</option>
+              <option value="MT">Montana</option>
+              <option value="NE">Nebraska</option>
+              <option value="NV">Nevada</option>
+              <option value="NH">New Hampshire</option>
+              <option value="NJ">New Jersey</option>
+              <option value="NM">New Mexico</option>
+              <option value="NY">New York</option>
+              <option value="NC">North Carolina</option>
+              <option value="ND">North Dakota</option>
+              <option value="OH">Ohio</option>
+              <option value="OK">Oklahoma</option>
+              <option value="OR">Oregon</option>
+              <option value="PA">Pennsylvania</option>
+              <option value="RI">Rhode Island</option>
+              <option value="SC">South Carolina</option>
+              <option value="SD">South Dakota</option>
+              <option value="TN">Tennessee</option>
+              <option value="TX">Texas</option>
+              <option value="UT">Utah</option>
+              <option value="VT">Vermont</option>
+              <option value="VA">Virginia</option>
+              <option value="WA">Washington</option>
+              <option value="WV">West Virginia</option>
+              <option value="WI">Wisconsin</option>
+              <option value="WY">Wyoming</option>
+              <option value="DC">District of Columbia</option>
+            </select>
           </div>
-          <div class="right">
-            <input id="years" type="number" min="0" step="1" value="15">
-          </div>
-        </div>
-      </div>
-
-      <div class="section">
-        <div class="stepTitle">Paso 3: Tasa de interés</div>
-
-        <div class="row">
-          <div class="left">
-            <div class="label">Tasa de interés estimada <span class="req">*</span></div>
-            <div class="help">Su tasa de interés anual estimada.</div>
-          </div>
-          <div class="right">
-            <input id="rate" type="number" min="0" step="0.01" value="12">
-          </div>
-        </div>
-
-        <div class="row">
-          <div class="left">
-            <div class="label">Rango de varianza de las tasas de interés</div>
-            <div class="help">Opcional. Si pones mínimo y máximo, verás 3 escenarios (mín / base / máx) en la tabla.</div>
-          </div>
-          <div class="right">
-            <div class="twoCol">
-              <input id="rateMin" type="number" min="0" step="0.01" placeholder="Mín (%)">
-              <input id="rateMax" type="number" min="0" step="0.01" placeholder="Máx (%)">
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div class="section">
-        <div class="stepTitle">Paso 4: Capitalización</div>
-
-        <div class="row">
-          <div class="left">
-            <div class="label">Frecuencia de capitalización</div>
-            <div class="help">Cantidad de veces por año que se capitalizará el interés.</div>
-          </div>
-          <div class="right">
-            <select id="comp">
-              <option value="12" selected>Mensualmente</option>
-              <option value="4">Trimestralmente</option>
-              <option value="1">Anualmente</option>
-              <option value="365">Diariamente</option>
+          <div class="field span-4">
+            <label for="taxYear">Tax year</label>
+            <select id="taxYear">
+              <option value="2025" selected>2025</option>
             </select>
           </div>
         </div>
 
-        <div class="btnRow">
-          <button class="btn red" id="btnCalc">CALCULAR</button>
-          <button class="btn green" id="btnReset">RESTABLECER</button>
+        <div class="row">
+          <div class="field span-3">
+            <label for="children">Qualifying children under 17</label>
+            <input id="children" type="number" min="0" step="1" value="0">
+          </div>
+          <div class="field span-3">
+            <label for="otherDependents">Other dependents</label>
+            <input id="otherDependents" type="number" min="0" step="1" value="0">
+          </div>
+          <div class="field span-3">
+            <label for="itemizedDeductions">Itemized deductions</label>
+            <input id="itemizedDeductions" type="number" min="0" step="0.01" value="0">
+          </div>
+          <div class="field span-3">
+            <label for="retirementAdjustments">Above-the-line adjustments</label>
+            <input id="retirementAdjustments" type="number" min="0" step="0.01" value="0" placeholder="IRA, HSA, etc.">
+          </div>
         </div>
-      </div>
+
+        <div class="row">
+          <div class="field span-6">
+            <label for="federalWithholding">Federal withholding already paid</label>
+            <input id="federalWithholding" type="number" min="0" step="0.01" value="0">
+          </div>
+          <div class="field span-6">
+            <label for="estimatedPayments">Estimated tax payments already made</label>
+            <input id="estimatedPayments" type="number" min="0" step="0.01" value="0">
+          </div>
+        </div>
+
+        <h3>Health insurance / 1095</h3>
+        <div class="subtext">
+          Keep this section simple for the client. First answer whether they have a 1095 form. Only then will the calculator show the fields that matter.
+        </div>
+
+        <div class="row">
+          <div class="field span-4">
+            <label for="has1095">Do you have a 1095 form?</label>
+            <select id="has1095">
+              <option value="no" selected>No</option>
+              <option value="yes">Yes</option>
+            </select>
+          </div>
+          <div class="field span-4 hidden" id="healthFormTypeWrap">
+            <label for="healthFormType">1095 form type</label>
+            <select id="healthFormType">
+              <option value="1095a">1095-A (Marketplace / ACA)</option>
+              <option value="1095b">1095-B</option>
+              <option value="1095c">1095-C</option>
+              <option value="other">Other / not sure</option>
+            </select>
+          </div>
+        </div>
+
+        <div id="health1095Dynamic" class="hidden">
+          <div id="healthInfo1095B" class="note hidden">
+            <strong>1095-B:</strong> this is usually informational only. In most cases it does not change the federal tax estimate in this calculator.
+          </div>
+          <div id="healthInfo1095C" class="note hidden">
+            <strong>1095-C:</strong> this is usually informational only. In most cases it does not change the federal tax estimate in this calculator.
+          </div>
+          <div id="healthInfoOther" class="note hidden">
+            <strong>Other / not sure:</strong> if this is not a Marketplace 1095-A, it usually does not change the federal estimate here.
+          </div>
+
+          <div id="health1095ASection" class="hidden">
+            <div class="row">
+              <div class="field span-4">
+                <label for="acaCalcMode">1095-A / ACA mode</label>
+                <select id="acaCalcMode">
+                  <option value="manual" selected>Use actual 1095-A amounts</option>
+                  <option value="auto">Quick estimate without full form</option>
+                </select>
+              </div>
+              <div class="field span-4">
+                <label for="householdMembers">Tax household members</label>
+                <input id="householdMembers" type="number" min="1" step="1" value="1" placeholder="Taxpayer + spouse + dependents">
+              </div>
+              <div class="field span-4">
+                <label for="monthsCovered">Months covered</label>
+                <select id="monthsCovered">
+                  <option value="12" selected>12 months</option>
+                  <option value="11">11 months</option>
+                  <option value="10">10 months</option>
+                  <option value="9">9 months</option>
+                  <option value="8">8 months</option>
+                  <option value="7">7 months</option>
+                  <option value="6">6 months</option>
+                  <option value="5">5 months</option>
+                  <option value="4">4 months</option>
+                  <option value="3">3 months</option>
+                  <option value="2">2 months</option>
+                  <option value="1">1 month</option>
+                </select>
+              </div>
+            </div>
+
+            <div id="acaQuickEstimateFields" class="hidden">
+              <div class="row">
+                <div class="field span-4">
+                  <label for="acaAdults">Covered adults</label>
+                  <input id="acaAdults" type="number" min="1" step="1" value="1" placeholder="Adults on plan">
+                </div>
+                <div class="field span-4">
+                  <label for="acaChildren">Covered children</label>
+                  <input id="acaChildren" type="number" min="0" step="1" value="0" placeholder="Children on plan">
+                </div>
+                <div class="field span-4">
+                  <label for="acaPlanLevel">Plan level for quick estimate</label>
+                  <select id="acaPlanLevel">
+                    <option value="bronze">Bronze</option>
+                    <option value="silver" selected>Silver</option>
+                    <option value="gold">Gold</option>
+                  </select>
+                </div>
+              </div>
+              <div class="subtext">
+                Tip: use <strong>Quick estimate without full form</strong> when the client has Marketplace coverage but does not yet have the full 1095-A numbers.
+              </div>
+            </div>
+
+            <div id="acaManualFields">
+              <div class="row">
+                <div class="field span-4">
+                  <label for="marketplacePremium">1095-A annual premium</label>
+                  <input id="marketplacePremium" type="number" min="0" step="0.01" value="0" placeholder="Column A total">
+                </div>
+                <div class="field span-4">
+                  <label for="slcspPremium">1095-A SLCSP premium</label>
+                  <input id="slcspPremium" type="number" min="0" step="0.01" value="0" placeholder="Column B total">
+                </div>
+                <div class="field span-4">
+                  <label for="advancePTC">Advance premium tax credit</label>
+                  <input id="advancePTC" type="number" min="0" step="0.01" value="0" placeholder="Column C total">
+                </div>
+              </div>
+              <div class="subtext">
+                Use this option when the client already has the 1095-A and you want to enter the actual annual totals from the form.
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <h3>Income entries</h3>
+        <div class="subtext">
+          Add as many income lines as you want. Use negative numbers only for business expenses or net losses where allowed.
+        </div>
+
+        <div id="incomeList"></div>
+
+        <div class="btns">
+          <button class="primary" type="button" id="addIncomeBtn">+ Add income type</button>
+          <button class="secondary" type="button" id="loadExampleBtn">Load example: $80k short-term trading</button>
+          <button class="secondary" type="button" id="calculateBtn">Calculate</button>
+          <button class="secondary" type="button" id="resetBtn">Reset</button>
+        </div>
+
+        <div class="note">
+          Important: this calculator treats <strong>1099-B short-term trading</strong> as <strong>ordinary income</strong> and does <strong>not</strong> add self-employment tax to it. It treats <strong>1099-NEC</strong> and <strong>1099-K business income</strong> as self-employment income and estimates SE tax. State income tax now uses a more detailed state-by-state structure, but it is still a <strong>planning estimate</strong> and does not include every state-specific deduction, local tax, or credit. The new ACA / 1095-A module can either reconcile actual 1095-A figures or create a <strong>simplified Form 8962-style estimate</strong> when exact Marketplace numbers are not available yet.
+        </div>
+      </section>
+
+      <aside class="card">
+        <h2>Results</h2>
+        <div class="summary-grid">
+          <div class="pill">
+            <small>Total estimated tax</small>
+            <strong id="totalTax">$0.00</strong>
+          </div>
+          <div class="pill">
+            <small>Refund / amount due</small>
+            <strong id="refundOrDue">$0.00</strong>
+          </div>
+          <div class="pill">
+            <small>Taxable income</small>
+            <strong id="taxableIncome">$0.00</strong>
+          </div>
+          <div class="pill">
+            <small>Effective tax rate</small>
+            <strong id="effectiveRate">0.00%</strong>
+          </div>
+        </div>
+
+        <div class="result-box" id="resultBreakdown"></div>
+
+        <div class="footer-note">
+          <strong>What this version handles well:</strong>
+          <ul class="list">
+            <li>Different federal treatment for W-2, self-employment, short-term trading, long-term capital gains, dividends, and interest.</li>
+            <li>Basic Child Tax Credit and Credit for Other Dependents.</li>
+            <li>Withholding and estimated payments to show refund or balance due.</li>
+            <li>Estimated state income tax is included for all state selections using flat-tax rules or more detailed marginal state brackets, depending on the state.</li>
+          </ul>
+        </div>
+      </aside>
     </div>
-
-    <!-- RESULTADOS -->
-    <div class="results" id="results">
-      <div class="resultsHeader">
-        <div class="h">Resultados</div>
-        <div class="bigLine">En <span id="yearsOut">0</span> años, tendrá <span class="badgeMoney" id="finalOut">$0.00</span></div>
-      </div>
-
-      <div class="resultsBody">
-        La siguiente información muestra una estimación de cuánto crecerán sus ahorros en el tiempo, según la tasa de interés y el cronograma de capitalización que especificó.
-        <br><br>
-        Recuerde que pequeños ajustes de las variables pueden afectar el resultado. Restablezca la calculadora e ingrese cifras diferentes para ver otras situaciones.
-      </div>
-
-      <div class="chartCard">
-        <div class="chartTop">
-          <div>Ahorros totales</div>
-          <div style="opacity:.7;font-size:12px">Año por año</div>
-        </div>
-        <div class="chartWrap">
-          <canvas id="chart"></canvas>
-          <div class="tooltip" id="tip"></div>
-        </div>
-        <div class="legend">
-          <div><span class="dot red"></span>Valor futuro (tasa base)</div>
-          <div><span class="dot green"></span>Contribuciones totales</div>
-        </div>
-      </div>
-
-      <div class="tableToggleRow">
-        <button class="btn gray" id="btnTable">SHOW TABLE</button>
-      </div>
-
-      <div class="tableShell" id="tableShell">
-        <div class="tableTitle">Ahorros totales en dólares estadounidenses</div>
-        <div style="overflow:auto">
-          <table id="tbl">
-            <thead>
-              <tr>
-                <th>Años</th>
-                <th>Valor futuro (tasa base)</th>
-                <th>Contribuciones totales</th>
-                <th id="thMin" style="display:none">Valor futuro (mín)</th>
-                <th id="thMax" style="display:none">Valor futuro (máx)</th>
-              </tr>
-            </thead>
-            <tbody></tbody>
-          </table>
-        </div>
-      </div>
-
-      <div class="noteSmall">
-        *Si llenas el rango de tasas (mín y máx), la tabla mostrará los 3 escenarios. El gráfico se mantiene en tasa base (para que se vea limpio).
-      </div>
-
-      <div class="btnRow" style="justify-content:center;">
-        <button class="btn gray" id="btnBack">VOLVER</button>
-      </div>
-    </div>
-
   </div>
 
-<script>
-  // Helpers
-  function money(x){
-    return x.toLocaleString('en-US', { style:'currency', currency:'USD' });
-  }
-  function clamp(n,min,max){ return Math.max(min, Math.min(max,n)); }
-  function gcd(a,b){ while(b){ [a,b]=[b,a%b]; } return a; }
-  function lcm(a,b){ return (a*b)/gcd(a,b); }
+  <template id="incomeRowTemplate">
+    <div class="income-row">
+      <div class="row">
+        <div class="field span-4">
+          <label>Income type</label>
+          <select class="income-type">
+            <option value="w2">W-2 wages</option>
+            <option value="1099nec">1099-NEC self-employment</option>
+            <option value="1099k">1099-K business income</option>
+            <option value="shortTrading">1099-B short-term trading</option>
+            <option value="longCapital">1099-B long-term capital gain</option>
+            <option value="qualifiedDiv">1099-DIV qualified dividends</option>
+            <option value="ordinaryDiv">1099-DIV ordinary / non-qualified dividends</option>
+            <option value="interest">1099-INT interest</option>
+            <option value="rentalOrdinary">Rental / other ordinary income</option>
+            <option value="other">Other taxable income</option>
+          </select>
+        </div>
+        <div class="field span-3">
+          <label>Gross amount</label>
+          <input class="income-amount" type="number" step="0.01" value="0">
+        </div>
+        <div class="field span-3">
+          <label>Related expenses / adjustments</label>
+          <input class="income-expense" type="number" step="0.01" value="0" placeholder="Business expenses">
+        </div>
+        <div class="field span-2">
+          <label>&nbsp;</label>
+          <button class="remove" type="button">Remove</button>
+        </div>
+      </div>
+      <div class="subtext row-meta"></div>
+    </div>
+  </template>
 
-  // Simulación: aportes mensuales + capitalización compPerYear
-  function simulate({P, PMT0, years, rateAnnual, contribGrowAnnual, compPerYear}){
-    const m = compPerYear;
-    const stepsPerYear = lcm(12, m);
-    const totalSteps = years * stepsPerYear;
+  <script>
+    const TAX_DATA_2025 = {
+      standardDeduction: {
+        single: 15750,
+        mfj: 31500,
+        mfs: 15750,
+        hoh: 23625
+      },
+      ordinaryBrackets: {
+        single: [
+          [11925, 0.10],
+          [48475, 0.12],
+          [103350, 0.22],
+          [197300, 0.24],
+          [250525, 0.32],
+          [626350, 0.35],
+          [Infinity, 0.37]
+        ],
+        mfj: [
+          [23850, 0.10],
+          [96950, 0.12],
+          [206700, 0.22],
+          [394600, 0.24],
+          [501050, 0.32],
+          [751600, 0.35],
+          [Infinity, 0.37]
+        ],
+        mfs: [
+          [11925, 0.10],
+          [48475, 0.12],
+          [103350, 0.22],
+          [197300, 0.24],
+          [250525, 0.32],
+          [375800, 0.35],
+          [Infinity, 0.37]
+        ],
+        hoh: [
+          [17000, 0.10],
+          [64850, 0.12],
+          [103350, 0.22],
+          [197300, 0.24],
+          [250500, 0.32],
+          [626350, 0.35],
+          [Infinity, 0.37]
+        ]
+      },
+      capitalGainsThresholds: {
+        single: { zero: 48350, fifteen: 533400 },
+        mfj: { zero: 96700, fifteen: 600050 },
+        mfs: { zero: 48350, fifteen: 300000 },
+        hoh: { zero: 64750, fifteen: 566700 }
+      },
+      ctcPerChild: 2200,
+      refundableCtcCapPerChild: 1700,
+      odcPerDependent: 500,
+      ctcPhaseout: { default: 200000, mfj: 400000 },
+      niitThreshold: { single: 200000, mfj: 250000, mfs: 125000, hoh: 200000 }
+    };
 
-    const contribEvery = stepsPerYear / 12;
-    const interestEvery = stepsPerYear / m;
 
-    const i = (rateAnnual) / m;
 
-    let balance = P;
-    let totalContrib = P;
+    const NO_INCOME_TAX_STATES = new Set(['AK', 'FL', 'NV', 'NH', 'SD', 'TN', 'TX', 'WA', 'WY']);
 
-    const yearly = [];
-    yearly.push({ year: 0, fv: balance, contrib: totalContrib });
+    const FLAT_STATE_TAX_RATES = {
+      AZ: 0.025,
+      CO: 0.044,
+      GA: 0.0539,
+      ID: 0.05695,
+      IL: 0.0495,
+      IN: 0.03,
+      IA: 0.038,
+      KY: 0.04,
+      LA: 0.03,
+      MA: 0.05,
+      MI: 0.0425,
+      MS: 0.044,
+      NC: 0.0425,
+      PA: 0.0307,
+      SC: 0.03,
+      UT: 0.0455
+    };
 
-    for(let step=1; step<=totalSteps; step++){
-      // aporte mensual
-      if(step % contribEvery === 0){
-        const monthsElapsed = step / contribEvery;
-        const yearIndex = Math.floor((monthsElapsed - 1) / 12); // 0=year1
-        const PMT = PMT0 * Math.pow(1 + contribGrowAnnual, yearIndex);
-        balance += PMT;
-        totalContrib += PMT;
+    function buildStatusBrackets(single, mfj = null, hoh = null, mfs = null) {
+      return {
+        single,
+        mfj: mfj || single.map(([limit, rate]) => [limit === Infinity ? Infinity : limit * 2, rate]),
+        hoh: hoh || single.map(([limit, rate]) => [limit === Infinity ? Infinity : limit * 1.5, rate]),
+        mfs: mfs || single
+      };
+    }
+
+    const PROGRESSIVE_STATE_BRACKETS = {
+      AL: buildStatusBrackets(
+        [[500, 0.02], [3000, 0.04], [Infinity, 0.05]],
+        [[1000, 0.02], [6000, 0.04], [Infinity, 0.05]],
+        [[500, 0.02], [3000, 0.04], [Infinity, 0.05]]
+      ),
+      AR: buildStatusBrackets(
+        [[4300, 0.02], [8500, 0.04], [Infinity, 0.039]],
+        [[4300, 0.02], [8500, 0.04], [Infinity, 0.039]],
+        [[4300, 0.02], [8500, 0.04], [Infinity, 0.039]]
+      ),
+      CA: buildStatusBrackets(
+        [[10412, 0.01], [24684, 0.02], [38959, 0.04], [54081, 0.06], [68350, 0.08], [349137, 0.093], [418961, 0.103], [698271, 0.113], [1000000, 0.123], [Infinity, 0.123]],
+        [[20824, 0.01], [49368, 0.02], [77918, 0.04], [108162, 0.06], [136700, 0.08], [698274, 0.093], [837922, 0.103], [1396542, 0.113], [2000000, 0.123], [Infinity, 0.123]],
+        [[20837, 0.01], [49371, 0.02], [63644, 0.04], [78765, 0.06], [93037, 0.08], [474824, 0.093], [569790, 0.103], [949649, 0.113], [1000000, 0.123], [Infinity, 0.123]]
+      ),
+      CT: buildStatusBrackets(
+        [[10000, 0.02], [50000, 0.045], [100000, 0.055], [200000, 0.06], [250000, 0.065], [500000, 0.069], [Infinity, 0.0699]],
+        [[20000, 0.02], [100000, 0.045], [200000, 0.055], [400000, 0.06], [500000, 0.065], [1000000, 0.069], [Infinity, 0.0699]],
+        [[16000, 0.02], [80000, 0.045], [160000, 0.055], [320000, 0.06], [400000, 0.065], [800000, 0.069], [Infinity, 0.0699]]
+      ),
+      DC: buildStatusBrackets(
+        [[10000, 0.04], [40000, 0.06], [60000, 0.065], [250000, 0.085], [500000, 0.0925], [1000000, 0.1075], [Infinity, 0.1075]],
+        [[10000, 0.04], [40000, 0.06], [60000, 0.065], [250000, 0.085], [500000, 0.0925], [1000000, 0.1075], [Infinity, 0.1075]],
+        [[10000, 0.04], [40000, 0.06], [60000, 0.065], [250000, 0.085], [500000, 0.0925], [1000000, 0.1075], [Infinity, 0.1075]]
+      ),
+      DE: buildStatusBrackets(
+        [[2000, 0.022], [5000, 0.039], [10000, 0.048], [20000, 0.052], [25000, 0.0555], [60000, 0.066], [Infinity, 0.066]],
+        [[2000, 0.022], [5000, 0.039], [10000, 0.048], [20000, 0.052], [25000, 0.0555], [60000, 0.066], [Infinity, 0.066]],
+        [[2000, 0.022], [5000, 0.039], [10000, 0.048], [20000, 0.052], [25000, 0.0555], [60000, 0.066], [Infinity, 0.066]]
+      ),
+      HI: buildStatusBrackets(
+        [[2400, 0.014], [4800, 0.032], [9600, 0.055], [14400, 0.064], [19200, 0.068], [24000, 0.072], [36000, 0.076], [48000, 0.079], [150000, 0.0825], [175000, 0.09], [200000, 0.10], [Infinity, 0.11]],
+        [[4800, 0.014], [9600, 0.032], [19200, 0.055], [28800, 0.064], [38400, 0.068], [48000, 0.072], [72000, 0.076], [96000, 0.079], [300000, 0.0825], [350000, 0.09], [400000, 0.10], [Infinity, 0.11]],
+        [[3600, 0.014], [7200, 0.032], [14400, 0.055], [21600, 0.064], [28800, 0.068], [36000, 0.072], [54000, 0.076], [72000, 0.079], [225000, 0.0825], [262500, 0.09], [300000, 0.10], [Infinity, 0.11]]
+      ),
+      KS: buildStatusBrackets(
+        [[15000, 0.031], [30000, 0.0525], [Infinity, 0.057]],
+        [[30000, 0.031], [60000, 0.0525], [Infinity, 0.057]],
+        [[15000, 0.031], [30000, 0.0525], [Infinity, 0.057]]
+      ),
+      MD: buildStatusBrackets(
+        [[1000, 0.02], [2000, 0.03], [3000, 0.04], [100000, 0.0475], [125000, 0.05], [150000, 0.0525], [250000, 0.055], [Infinity, 0.0575]],
+        [[1000, 0.02], [2000, 0.03], [3000, 0.04], [150000, 0.0475], [175000, 0.05], [225000, 0.0525], [300000, 0.055], [Infinity, 0.0575]],
+        [[1000, 0.02], [2000, 0.03], [3000, 0.04], [100000, 0.0475], [125000, 0.05], [150000, 0.0525], [250000, 0.055], [Infinity, 0.0575]]
+      ),
+      ME: buildStatusBrackets(
+        [[26050, 0.058], [61600, 0.0675], [Infinity, 0.0715]],
+        [[52100, 0.058], [123200, 0.0675], [Infinity, 0.0715]],
+        [[39100, 0.058], [92400, 0.0675], [Infinity, 0.0715]]
+      ),
+      MN: buildStatusBrackets(
+        [[31220, 0.0535], [102360, 0.068], [190380, 0.0785], [304970, 0.0985], [Infinity, 0.0985]],
+        [[45620, 0.0535], [181840, 0.068], [320040, 0.0785], [609930, 0.0985], [Infinity, 0.0985]],
+        [[38410, 0.0535], [136770, 0.068], [228020, 0.0785], [365970, 0.0985], [Infinity, 0.0985]]
+      ),
+      MO: buildStatusBrackets(
+        [[1307, 0.02], [2614, 0.025], [3921, 0.03], [5228, 0.035], [6535, 0.04], [7842, 0.045], [Infinity, 0.047]],
+        [[1307, 0.02], [2614, 0.025], [3921, 0.03], [5228, 0.035], [6535, 0.04], [7842, 0.045], [Infinity, 0.047]],
+        [[1307, 0.02], [2614, 0.025], [3921, 0.03], [5228, 0.035], [6535, 0.04], [7842, 0.045], [Infinity, 0.047]]
+      ),
+      MT: buildStatusBrackets(
+        [[20500, 0.047], [Infinity, 0.059]],
+        [[41000, 0.047], [Infinity, 0.059]],
+        [[30750, 0.047], [Infinity, 0.059]]
+      ),
+      NE: buildStatusBrackets(
+        [[3860, 0.0246], [23100, 0.0351], [37790, 0.0584], [Infinity, 0.0584]],
+        [[7720, 0.0246], [46200, 0.0351], [75580, 0.0584], [Infinity, 0.0584]],
+        [[5790, 0.0246], [34650, 0.0351], [56685, 0.0584], [Infinity, 0.0584]]
+      ),
+      NJ: buildStatusBrackets(
+        [[20000, 0.014], [35000, 0.0175], [40000, 0.035], [75000, 0.05525], [500000, 0.0637], [1000000, 0.0897], [Infinity, 0.1075]],
+        [[20000, 0.014], [50000, 0.0175], [70000, 0.0245], [80000, 0.035], [150000, 0.05525], [500000, 0.0637], [1000000, 0.0897], [Infinity, 0.1075]],
+        [[20000, 0.014], [35000, 0.0175], [40000, 0.035], [75000, 0.05525], [500000, 0.0637], [1000000, 0.0897], [Infinity, 0.1075]]
+      ),
+      NM: buildStatusBrackets(
+        [[5500, 0.015], [11000, 0.032], [16000, 0.047], [210000, 0.049], [Infinity, 0.059]],
+        [[8000, 0.015], [16000, 0.032], [24000, 0.047], [315000, 0.049], [Infinity, 0.059]],
+        [[8000, 0.015], [16000, 0.032], [24000, 0.047], [210000, 0.049], [Infinity, 0.059]]
+      ),
+      NY: buildStatusBrackets(
+        [[8500, 0.04], [11700, 0.045], [13900, 0.0525], [21400, 0.055], [80650, 0.06], [215400, 0.0685], [1077550, 0.0965], [5000000, 0.103], [25000000, 0.109], [Infinity, 0.109]],
+        [[17150, 0.04], [23600, 0.045], [27900, 0.0525], [43000, 0.055], [161550, 0.06], [323200, 0.0685], [2155350, 0.0965], [5000000, 0.103], [25000000, 0.109], [Infinity, 0.109]],
+        [[12800, 0.04], [17650, 0.045], [20900, 0.0525], [32200, 0.055], [107650, 0.06], [269300, 0.0685], [1616450, 0.0965], [5000000, 0.103], [25000000, 0.109], [Infinity, 0.109]]
+      ),
+      ND: buildStatusBrackets(
+        [[48400, 0.0195], [Infinity, 0.025]],
+        [[80950, 0.0195], [Infinity, 0.025]],
+        [[64850, 0.0195], [Infinity, 0.025]]
+      ),
+      OH: buildStatusBrackets(
+        [[26050, 0.00], [100000, 0.0275], [Infinity, 0.035]],
+        [[26050, 0.00], [100000, 0.0275], [Infinity, 0.035]],
+        [[26050, 0.00], [100000, 0.0275], [Infinity, 0.035]]
+      ),
+      OK: buildStatusBrackets(
+        [[1000, 0.0025], [2500, 0.0075], [3750, 0.0175], [4900, 0.0275], [7200, 0.0375], [Infinity, 0.0475]],
+        [[2000, 0.0025], [5000, 0.0075], [7500, 0.0175], [9800, 0.0275], [12200, 0.0375], [Infinity, 0.0475]],
+        [[1000, 0.0025], [2500, 0.0075], [3750, 0.0175], [4900, 0.0275], [7200, 0.0375], [Infinity, 0.0475]]
+      ),
+      OR: buildStatusBrackets(
+        [[4050, 0.0475], [10200, 0.0675], [125000, 0.0875], [Infinity, 0.099]],
+        [[8100, 0.0475], [20400, 0.0675], [250000, 0.0875], [Infinity, 0.099]],
+        [[4050, 0.0475], [10200, 0.0675], [125000, 0.0875], [Infinity, 0.099]]
+      ),
+      RI: buildStatusBrackets(
+        [[79100, 0.0375], [179200, 0.0475], [Infinity, 0.0599]],
+        [[79100, 0.0375], [179200, 0.0475], [Infinity, 0.0599]],
+        [[79100, 0.0375], [179200, 0.0475], [Infinity, 0.0599]]
+      ),
+      VA: buildStatusBrackets(
+        [[3000, 0.02], [5000, 0.03], [17000, 0.05], [Infinity, 0.0575]],
+        [[3000, 0.02], [5000, 0.03], [17000, 0.05], [Infinity, 0.0575]],
+        [[3000, 0.02], [5000, 0.03], [17000, 0.05], [Infinity, 0.0575]]
+      ),
+      VT: buildStatusBrackets(
+        [[45400, 0.0335], [110050, 0.066], [229550, 0.076], [Infinity, 0.0875]],
+        [[75800, 0.0335], [184100, 0.066], [280350, 0.076], [Infinity, 0.0875]],
+        [[60700, 0.0335], [157150, 0.066], [254650, 0.076], [Infinity, 0.0875]]
+      ),
+      WV: buildStatusBrackets(
+        [[10000, 0.0236], [25000, 0.0315], [40000, 0.0354], [60000, 0.0472], [Infinity, 0.0512]],
+        [[10000, 0.0236], [25000, 0.0315], [40000, 0.0354], [60000, 0.0472], [Infinity, 0.0512]],
+        [[10000, 0.0236], [25000, 0.0315], [40000, 0.0354], [60000, 0.0472], [Infinity, 0.0512]]
+      ),
+      WI: buildStatusBrackets(
+        [[14680, 0.035], [29370, 0.044], [323910, 0.053], [Infinity, 0.0765]],
+        [[19570, 0.035], [39150, 0.044], [431880, 0.053], [Infinity, 0.0765]],
+        [[14680, 0.035], [29370, 0.044], [323910, 0.053], [Infinity, 0.0765]]
+      )
+    };
+
+    const STATE_STANDARD_DEDUCTIONS = {
+      AZ: { default: 14600, mfj: 29200 },
+      CO: { default: 15750, mfj: 31500, hoh: 23625 },
+      CT: { default: 15000, mfj: 24000, hoh: 19000 },
+      ID: { default: 14600, mfj: 29200, hoh: 21900 },
+      KS: { default: 3500, mfj: 8000, hoh: 6000 },
+      ME: { default: 15500, mfj: 31000, hoh: 23250 },
+      MT: { default: 14600, mfj: 29200, hoh: 21900 },
+      NE: { default: 8250, mfj: 16500, hoh: 12100 },
+      NM: { default: 14600, mfj: 29200, hoh: 21900 },
+      NY: { default: 8000, mfj: 16050, hoh: 11200 },
+      NC: { default: 12750, mfj: 25500, hoh: 19125 },
+      OR: { default: 2745, mfj: 5495, hoh: 4420 },
+      SC: { default: 0, mfj: 0, hoh: 0 },
+      VT: { default: 7500, mfj: 15000, hoh: 11250 },
+      WI: { default: 0, mfj: 0, hoh: 0 }
+    };
+
+    function getStateTaxableIncome(state, taxableIncome, status) {
+      const base = Math.max(0, taxableIncome);
+      const deductionData = STATE_STANDARD_DEDUCTIONS[state];
+      if (!deductionData) return base;
+      const deduction = deductionData[status] ?? deductionData.default ?? 0;
+      return Math.max(0, base - deduction);
+    }
+
+    function getStateBrackets(state, status) {
+      const stateData = PROGRESSIVE_STATE_BRACKETS[state];
+      if (!stateData) return null;
+      return stateData[status] || stateData.single;
+    }
+
+    function calculateStateTax(state, taxableIncome, status) {
+      const stateTaxableIncome = getStateTaxableIncome(state, taxableIncome, status);
+      if (stateTaxableIncome <= 0) return 0;
+      if (NO_INCOME_TAX_STATES.has(state)) return 0;
+      if (FLAT_STATE_TAX_RATES[state] !== undefined) {
+        return stateTaxableIncome * FLAT_STATE_TAX_RATES[state];
       }
-      // capitalización
-      if(step % interestEvery === 0){
-        balance *= (1 + i);
+      const brackets = getStateBrackets(state, status);
+      if (brackets) {
+        return taxFromBrackets(stateTaxableIncome, brackets);
       }
-
-      // cierre de año
-      if(step % stepsPerYear === 0){
-        const year = step / stepsPerYear;
-        yearly.push({ year, fv: balance, contrib: totalContrib });
-      }
+      return 0;
     }
 
-    return { balance, totalContrib, yearly };
-  }
+    const descriptions = {
+      w2: 'Ordinary income. No self-employment tax.',
+      '1099nec': 'Business/self-employment income. Income tax + estimated SE tax.',
+      '1099k': 'Usually business income when tied to services/sales. Income tax + estimated SE tax.',
+      shortTrading: 'Short-term capital gains are taxed as ordinary income. No SE tax.',
+      longCapital: 'Long-term capital gains use the capital gains rate structure.',
+      qualifiedDiv: 'Qualified dividends generally use long-term capital gains rates.',
+      ordinaryDiv: 'Non-qualified dividends are taxed as ordinary income.',
+      interest: 'Interest is taxed as ordinary income.',
+      rentalOrdinary: 'Simplified here as ordinary income. Passive/rental rules can vary.',
+      other: 'General taxable income bucket.'
+    };
 
-  // UI
-  const el = (id)=>document.getElementById(id);
+    const incomeList = document.getElementById('incomeList');
+    const template = document.getElementById('incomeRowTemplate');
 
-  const formShell = el('formShell');
-  const results = el('results');
-
-  const btnCalc = el('btnCalc');
-  const btnReset = el('btnReset');
-  const btnBack = el('btnBack');
-
-  const btnTable = el('btnTable');
-  const tableShell = el('tableShell');
-
-  const canvas = el('chart');
-  const ctx = canvas.getContext('2d');
-  const tip = el('tip');
-
-  let lastYearly = null;
-  let chartState = null;
-
-  function getInputs(){
-    const P = parseFloat(el('initial').value || "0");
-    const PMT0 = parseFloat(el('monthly').value || "0");
-    const years = Math.max(0, Math.floor(parseFloat(el('years').value || "0")));
-    const rateBase = (parseFloat(el('rate').value || "0")) / 100;
-    const inc = (parseFloat(el('increase').value || "0")) / 100;
-    const m = parseInt(el('comp').value, 10);
-
-    const rMinRaw = el('rateMin').value.trim();
-    const rMaxRaw = el('rateMax').value.trim();
-    const rMin = rMinRaw === "" ? null : (parseFloat(rMinRaw)/100);
-    const rMax = rMaxRaw === "" ? null : (parseFloat(rMaxRaw)/100);
-
-    return {P, PMT0, years, rateBase, inc, m, rMin, rMax};
-  }
-
-  function validate(inp){
-    if(inp.P < 0 || inp.PMT0 < 0 || inp.years < 0 || inp.rateBase < 0 || inp.inc < 0) return false;
-    if([inp.P,inp.PMT0,inp.years,inp.rateBase,inp.inc].some(v => Number.isNaN(v))) return false;
-    return true;
-  }
-
-  function showResults(){
-    formShell.style.display = "none";
-    results.style.display = "block";
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  }
-
-  function showForm(){
-    results.style.display = "none";
-    formShell.style.display = "block";
-    tableShell.style.display = "none";
-    btnTable.textContent = "SHOW TABLE";
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  }
-
-  function drawChart(yearly){
-    // ✅ Clave: usar el tamaño real en pantalla
-    const dpr = window.devicePixelRatio || 1;
-
-    const rect = canvas.getBoundingClientRect();
-    const cssW = Math.max(1, Math.floor(rect.width));
-    const cssH = Math.max(1, Math.floor(rect.height));
-
-    canvas.width  = Math.floor(cssW * dpr);
-    canvas.height = Math.floor(cssH * dpr);
-
-    ctx.setTransform(dpr,0,0,dpr,0,0);
-
-    const W = cssW, H = cssH;
-    const padL=62, padR=18, padT=18, padB=54;
-
-    const xs = yearly.map(p=>p.year);
-    const fv = yearly.map(p=>p.fv);
-    const contrib = yearly.map(p=>p.contrib);
-
-    const maxY = Math.max(...fv, ...contrib);
-    const minY = 0;
-
-    // bg
-    ctx.clearRect(0,0,W,H);
-    ctx.fillStyle = "#fff";
-    ctx.fillRect(0,0,W,H);
-
-    // grid
-    ctx.strokeStyle = "rgba(0,0,0,.10)";
-    ctx.lineWidth = 1;
-    const gridLines = 6;
-    for(let g=0; g<=gridLines; g++){
-      const y = padT + (H-padT-padB)*(g/gridLines);
-      ctx.beginPath(); ctx.moveTo(padL,y); ctx.lineTo(W-padR,y); ctx.stroke();
+    function formatMoney(n) {
+      const value = Number.isFinite(n) ? n : 0;
+      return value.toLocaleString('en-US', { style: 'currency', currency: 'USD' });
     }
 
-    // axis
-    ctx.strokeStyle = "rgba(0,0,0,.25)";
-    ctx.beginPath();
-    ctx.moveTo(padL,padT);
-    ctx.lineTo(padL,H-padB);
-    ctx.lineTo(W-padR,H-padB);
-    ctx.stroke();
-
-    const xMin = 0, xMax = yearly[yearly.length-1].year;
-    const xMap = (x)=> padL + (W-padL-padR) * ((x-xMin)/(xMax-xMin || 1));
-    const yMap = (y)=> padT + (H-padT-padB) * (1 - ((y-minY)/(maxY-minY || 1)));
-
-    // y labels
-    ctx.fillStyle = "rgba(0,0,0,.75)";
-    ctx.font = "12px Arial";
-    for(let g=0; g<=gridLines; g++){
-      const v = (maxY/gridLines) * (gridLines-g);
-      const y = padT + (H-padT-padB)*(g/gridLines);
-      ctx.fillText("$" + Math.round(v).toLocaleString('en-US'), 8, y+4);
+    function formatPercent(n) {
+      const value = Number.isFinite(n) ? n : 0;
+      return value.toFixed(2) + '%';
     }
 
-    // x labels
-    const step = Math.max(1, Math.floor(xMax/15));
-    for(let x=0; x<=xMax; x+=step){
-      const xx = xMap(x);
-      ctx.save();
-      ctx.translate(xx, H-padB+22);
-      ctx.rotate(-Math.PI/4);
-      ctx.fillText("Año " + x, 0, 0);
-      ctx.restore();
+    function getTaxData() {
+      return TAX_DATA_2025;
     }
 
-    function plotLine(series, color){
-      ctx.strokeStyle = color;
-      ctx.lineWidth = 3;  // ✅ más visible
-      ctx.beginPath();
-      series.forEach((v,idx)=>{
-        const xx = xMap(xs[idx]);
-        const yy = yMap(v);
-        if(idx===0) ctx.moveTo(xx,yy); else ctx.lineTo(xx,yy);
+    function createIncomeRow(type = 'w2', amount = 0, expense = 0) {
+      const clone = template.content.cloneNode(true);
+      const row = clone.querySelector('.income-row');
+      const typeEl = clone.querySelector('.income-type');
+      const amountEl = clone.querySelector('.income-amount');
+      const expenseEl = clone.querySelector('.income-expense');
+      const metaEl = clone.querySelector('.row-meta');
+      const removeBtn = clone.querySelector('.remove');
+
+      typeEl.value = type;
+      amountEl.value = amount;
+      expenseEl.value = expense;
+      metaEl.textContent = descriptions[type] || '';
+
+      typeEl.addEventListener('change', () => {
+        metaEl.textContent = descriptions[typeEl.value] || '';
       });
-      ctx.stroke();
 
-      ctx.fillStyle = color;
-      series.forEach((v,idx)=>{
-        const xx = xMap(xs[idx]);
-        const yy = yMap(v);
-        ctx.beginPath();
-        ctx.arc(xx,yy,4.2,0,Math.PI*2); // ✅ puntos más visibles
-        ctx.fill();
+      removeBtn.addEventListener('click', () => {
+        row.remove();
+        calculate();
       });
+
+      amountEl.addEventListener('input', calculate);
+      expenseEl.addEventListener('input', calculate);
+      typeEl.addEventListener('change', calculate);
+
+      incomeList.appendChild(clone);
     }
 
-    plotLine(fv, "#c03a36");
-    plotLine(contrib, "#2f9a86");
+    function resetCalculator() {
+      document.getElementById('filingStatus').value = 'single';
+      document.getElementById('state').value = 'FL';
+      document.getElementById('children').value = 0;
+      document.getElementById('otherDependents').value = 0;
+      document.getElementById('itemizedDeductions').value = 0;
+      document.getElementById('retirementAdjustments').value = 0;
+      document.getElementById('federalWithholding').value = 0;
+      document.getElementById('estimatedPayments').value = 0;
+      document.getElementById('has1095').value = 'no';
+      document.getElementById('healthFormType').value = '1095a';
+      document.getElementById('acaCalcMode').value = 'manual';
+      document.getElementById('acaAdults').value = '1';
+      document.getElementById('acaChildren').value = '0';
+      document.getElementById('acaPlanLevel').value = 'silver';
+      document.getElementById('householdMembers').value = 1;
+      document.getElementById('monthsCovered').value = 12;
+      document.getElementById('marketplacePremium').value = 0;
+      document.getElementById('slcspPremium').value = 0;
+      document.getElementById('advancePTC').value = 0;
+      incomeList.innerHTML = '';
+      createIncomeRow('w2', 0, 0);
+      syncHouseholdMembers();
+      updateHealth1095UI();
+      calculate();
+    }
 
-    return { xMap, xs, fv, contrib };
-  }
+    function loadExample() {
+      document.getElementById('filingStatus').value = 'single';
+      document.getElementById('state').value = 'FL';
+      document.getElementById('children').value = 0;
+      document.getElementById('otherDependents').value = 0;
+      document.getElementById('itemizedDeductions').value = 0;
+      document.getElementById('retirementAdjustments').value = 0;
+      document.getElementById('federalWithholding').value = 0;
+      document.getElementById('estimatedPayments').value = 0;
+      document.getElementById('has1095').value = 'no';
+      document.getElementById('healthFormType').value = '1095a';
+      document.getElementById('acaCalcMode').value = 'manual';
+      document.getElementById('acaAdults').value = '1';
+      document.getElementById('acaChildren').value = '0';
+      document.getElementById('acaPlanLevel').value = 'silver';
+      document.getElementById('householdMembers').value = 1;
+      document.getElementById('monthsCovered').value = 12;
+      document.getElementById('marketplacePremium').value = 0;
+      document.getElementById('slcspPremium').value = 0;
+      document.getElementById('advancePTC').value = 0;
+      incomeList.innerHTML = '';
+      createIncomeRow('shortTrading', 80000, 0);
+      syncHouseholdMembers();
+      updateHealth1095UI();
+      calculate();
+    }
 
-  function fillTable(yearly, yearlyMin, yearlyMax){
-    const tbody = el('tbl').querySelector('tbody');
-    tbody.innerHTML = "";
+    function updateHealth1095UI() {
+      const has1095 = document.getElementById('has1095').value;
+      const formType = has1095 === 'yes' ? document.getElementById('healthFormType').value : 'none';
+      const acaMode = document.getElementById('acaCalcMode').value;
 
-    const showMinMax = !!(yearlyMin && yearlyMax);
-    el('thMin').style.display = showMinMax ? "" : "none";
-    el('thMax').style.display = showMinMax ? "" : "none";
+      const typeWrap = document.getElementById('healthFormTypeWrap');
+      const dynamicWrap = document.getElementById('health1095Dynamic');
+      const sectionA = document.getElementById('health1095ASection');
+      const infoB = document.getElementById('healthInfo1095B');
+      const infoC = document.getElementById('healthInfo1095C');
+      const infoOther = document.getElementById('healthInfoOther');
+      const manualFields = document.getElementById('acaManualFields');
+      const quickFields = document.getElementById('acaQuickEstimateFields');
 
-    for(let i=0;i<yearly.length;i++){
-      const y = yearly[i];
-      const tr = document.createElement('tr');
+      typeWrap.classList.toggle('hidden', has1095 !== 'yes');
+      dynamicWrap.classList.toggle('hidden', has1095 !== 'yes');
 
-      const tdYear = document.createElement('td'); tdYear.textContent = "Año " + y.year;
-      const tdFV = document.createElement('td'); tdFV.textContent = money(y.fv);
-      const tdC = document.createElement('td'); tdC.textContent = money(y.contrib);
+      sectionA.classList.add('hidden');
+      infoB.classList.add('hidden');
+      infoC.classList.add('hidden');
+      infoOther.classList.add('hidden');
 
-      tr.appendChild(tdYear);
-      tr.appendChild(tdFV);
-      tr.appendChild(tdC);
-
-      if(showMinMax){
-        const tdMin = document.createElement('td'); tdMin.textContent = money(yearlyMin[i].fv);
-        const tdMax = document.createElement('td'); tdMax.textContent = money(yearlyMax[i].fv);
-        tr.appendChild(tdMin);
-        tr.appendChild(tdMax);
+      if (has1095 === 'yes') {
+        if (formType === '1095a') {
+          sectionA.classList.remove('hidden');
+        } else if (formType === '1095b') {
+          infoB.classList.remove('hidden');
+        } else if (formType === '1095c') {
+          infoC.classList.remove('hidden');
+        } else {
+          infoOther.classList.remove('hidden');
+        }
       }
 
-      tbody.appendChild(tr);
-    }
-  }
-
-  function calc(){
-    const inp = getInputs();
-    if(!validate(inp)){
-      alert("Revisa tus números (no pueden estar vacíos o negativos).");
-      return;
+      if (sectionA.classList.contains('hidden')) {
+        manualFields.classList.add('hidden');
+        quickFields.classList.add('hidden');
+      } else {
+        manualFields.classList.toggle('hidden', acaMode !== 'manual');
+        quickFields.classList.toggle('hidden', acaMode !== 'auto');
+      }
     }
 
-    const base = simulate({
-      P: inp.P,
-      PMT0: inp.PMT0,
-      years: inp.years,
-      rateAnnual: inp.rateBase,
-      contribGrowAnnual: inp.inc,
-      compPerYear: inp.m
+    function getFplForHousehold(size) {
+      if (size <= 8) return FPL_2025[size];
+      return FPL_2025[8] + (size - 8) * 5500;
+    }
+
+    function getExpectedContributionRate(fplPercent) {
+      if (fplPercent <= 150) return 0;
+      if (fplPercent <= 200) return ((fplPercent - 150) / 50) * 0.02;
+      if (fplPercent <= 250) return 0.02 + ((fplPercent - 200) / 50) * 0.02;
+      if (fplPercent <= 300) return 0.04 + ((fplPercent - 250) / 50) * 0.02;
+      if (fplPercent <= 400) return 0.06 + ((fplPercent - 300) / 100) * 0.025;
+      return 0.085;
+    }
+
+
+    function getQuickAcaBenchmarkMonthly(adults, children) {
+      const safeAdults = Math.max(1, Math.floor(adults || 1));
+      const safeChildren = Math.max(0, Math.floor(children || 0));
+      const adultMonthly = 520;
+      const childMonthly = 260;
+      return (safeAdults * adultMonthly) + (safeChildren * childMonthly);
+    }
+
+    function getPlanFactor(planLevel) {
+      if (planLevel === 'bronze') return 0.82;
+      if (planLevel === 'gold') return 1.18;
+      return 1;
+    }
+
+    function estimatePremiumTaxCredit(agi, status, children, otherDependents) {
+      const has1095 = document.getElementById('has1095').value;
+      const formType = has1095 === 'yes' ? document.getElementById('healthFormType').value : 'none';
+      const acaCalcMode = document.getElementById('acaCalcMode').value;
+      const marketplacePremium = Math.max(0, parseNumber('marketplacePremium'));
+      const slcspPremium = Math.max(0, parseNumber('slcspPremium'));
+      const advancePTC = Math.max(0, parseNumber('advancePTC'));
+      const monthsCovered = Math.max(1, Math.min(12, parseInt(document.getElementById('monthsCovered').value || '12', 10)));
+      let householdMembers = Math.max(1, Math.floor(parseNumber('householdMembers')));
+      if (!householdMembers) {
+        householdMembers = getHouseholdSize(status, children, otherDependents);
+      }
+      const coveredAdults = Math.max(1, Math.floor(parseNumber('acaAdults')) || (status === 'mfj' ? 2 : 1));
+      const coveredChildren = Math.max(0, Math.floor(parseNumber('acaChildren')) || 0);
+      const planLevel = document.getElementById('acaPlanLevel').value;
+      const annualizedFactor = monthsCovered / 12;
+
+      if (formType !== '1095a') {
+        return {
+          formType,
+          acaCalcMode,
+          householdMembers,
+          coveredAdults,
+          coveredChildren,
+          planLevel,
+          monthsCovered,
+          allowedPTC: 0,
+          advancePTC,
+          netPTCAdjustment: 0,
+          expectedContribution: 0,
+          benchmarkPremiumUsed: 0,
+          planPremiumUsed: 0,
+          estimatedMonthlyBenchmark: 0,
+          estimatedMonthlyPlanPremium: 0,
+          fplPercent: 0,
+          note: formType === '1095b' || formType === '1095c'
+            ? '1095-B / 1095-C normally do not change federal income tax in this simplified calculator.'
+            : 'No marketplace reconciliation applied.'
+        };
+      }
+
+      const fpl = getFplForHousehold(householdMembers);
+      const fplPercent = fpl > 0 ? (Math.max(0, agi) / fpl) * 100 : 0;
+      const expectedContributionRate = getExpectedContributionRate(fplPercent);
+      const expectedContribution = Math.max(0, agi) * expectedContributionRate * annualizedFactor;
+
+      let benchmarkPremiumUsed = Math.max(0, slcspPremium) * annualizedFactor;
+      let planPremiumUsed = Math.max(0, marketplacePremium) * annualizedFactor;
+      let advancePTCUsed = advancePTC * annualizedFactor;
+      let estimatedMonthlyBenchmark = 0;
+      let estimatedMonthlyPlanPremium = 0;
+      let note = '';
+
+      if (acaCalcMode === 'auto' || (!marketplacePremium && !slcspPremium && !advancePTC)) {
+        estimatedMonthlyBenchmark = getQuickAcaBenchmarkMonthly(coveredAdults, coveredChildren);
+        estimatedMonthlyPlanPremium = estimatedMonthlyBenchmark * getPlanFactor(planLevel);
+        benchmarkPremiumUsed = estimatedMonthlyBenchmark * monthsCovered;
+        planPremiumUsed = estimatedMonthlyPlanPremium * monthsCovered;
+        advancePTCUsed = Math.max(0, benchmarkPremiumUsed - expectedContribution);
+        note = 'Quick ACA estimate mode used. Benchmark and subsidy are estimated from income, household size, covered adults/children, plan level, and months covered.';
+      }
+
+      const allowedPTC = Math.max(0, Math.min(planPremiumUsed, benchmarkPremiumUsed - expectedContribution));
+      const netPTCAdjustment = allowedPTC - advancePTCUsed;
+
+      if (!note) {
+        note = netPTCAdjustment >= 0
+          ? 'Estimated extra Premium Tax Credit added as a refundable benefit.'
+          : 'Estimated excess advance Premium Tax Credit may need to be repaid.';
+      }
+
+      return {
+        formType,
+        acaCalcMode,
+        householdMembers,
+        coveredAdults,
+        coveredChildren,
+        planLevel,
+        monthsCovered,
+        allowedPTC,
+        advancePTC: advancePTCUsed,
+        netPTCAdjustment,
+        expectedContribution,
+        benchmarkPremiumUsed,
+        planPremiumUsed,
+        estimatedMonthlyBenchmark,
+        estimatedMonthlyPlanPremium,
+        fplPercent,
+        note
+      };
+    }
+
+    function calculateSE(netSelfEmployment) {
+      const seBase = Math.max(0, netSelfEmployment) * 0.9235;
+      const seTax = seBase * 0.153;
+      const deductibleHalf = seTax / 2;
+      return { seBase, seTax, deductibleHalf };
+    }
+
+    function calculateCredits(magi, status, children, otherDependents, data, taxBeforeCredits, earnedIncome) {
+      const phaseoutThreshold = status === 'mfj' ? data.ctcPhaseout.mfj : data.ctcPhaseout.default;
+      const initialCTC = children * data.ctcPerChild + otherDependents * data.odcPerDependent;
+      const phaseout = Math.max(0, Math.ceil((Math.max(0, magi - phaseoutThreshold)) / 1000) * 50);
+      const nonrefundablePool = Math.max(0, initialCTC - phaseout);
+      const usedAgainstTax = Math.min(nonrefundablePool, Math.max(0, taxBeforeCredits));
+
+      const childPoolRemaining = Math.max(0, children * data.ctcPerChild - Math.max(0, phaseout));
+      const possibleRefundable = Math.min(children * data.refundableCtcCapPerChild, Math.max(0, earnedIncome - 2500) * 0.15);
+      const refundableACTC = Math.min(possibleRefundable, Math.max(0, childPoolRemaining - Math.min(childPoolRemaining, usedAgainstTax)));
+
+      return {
+        initialCTC,
+        phaseout,
+        nonrefundableUsed: usedAgainstTax,
+        refundableACTC
+      };
+    }
+
+    function calculateNIIT(netInvestmentIncome, magi, status, data) {
+      const threshold = data.niitThreshold[status];
+      return Math.max(0, Math.min(netInvestmentIncome, Math.max(0, magi - threshold)) * 0.038);
+    }
+
+    function calculate() {
+      const data = getTaxData();
+      const status = document.getElementById('filingStatus').value;
+      const state = document.getElementById('state').value;
+      const children = Math.max(0, Math.floor(parseNumber('children')));
+      const otherDependents = Math.max(0, Math.floor(parseNumber('otherDependents')));
+      const itemizedDeductions = Math.max(0, parseNumber('itemizedDeductions'));
+      const adjustments = Math.max(0, parseNumber('retirementAdjustments'));
+      const federalWithholding = Math.max(0, parseNumber('federalWithholding'));
+      const estimatedPayments = Math.max(0, parseNumber('estimatedPayments'));
+      syncHouseholdMembers();
+
+      let ordinaryIncome = 0;
+      let preferentialIncome = 0;
+      let selfEmploymentNet = 0;
+      let earnedIncome = 0;
+      let netInvestmentIncome = 0;
+
+      document.querySelectorAll('.income-row').forEach(row => {
+        const type = row.querySelector('.income-type').value;
+        const amount = parseFloat(row.querySelector('.income-amount').value) || 0;
+        const expense = parseFloat(row.querySelector('.income-expense').value) || 0;
+        const net = amount - expense;
+
+        switch (type) {
+          case 'w2':
+            ordinaryIncome += net;
+            earnedIncome += Math.max(0, net);
+            break;
+          case '1099nec':
+          case '1099k':
+            ordinaryIncome += net;
+            selfEmploymentNet += net;
+            earnedIncome += Math.max(0, net);
+            break;
+          case 'shortTrading':
+            ordinaryIncome += net;
+            netInvestmentIncome += Math.max(0, net);
+            break;
+          case 'longCapital':
+            preferentialIncome += net;
+            netInvestmentIncome += Math.max(0, net);
+            break;
+          case 'qualifiedDiv':
+            preferentialIncome += net;
+            netInvestmentIncome += Math.max(0, net);
+            break;
+          case 'ordinaryDiv':
+            ordinaryIncome += net;
+            netInvestmentIncome += Math.max(0, net);
+            break;
+          case 'interest':
+            ordinaryIncome += net;
+            netInvestmentIncome += Math.max(0, net);
+            break;
+          case 'rentalOrdinary':
+          case 'other':
+            ordinaryIncome += net;
+            break;
+        }
+      });
+
+      const se = calculateSE(selfEmploymentNet);
+      const totalIncome = ordinaryIncome + preferentialIncome;
+      const grossIncome = Math.max(0, totalIncome);
+      const adjustedGrossIncome = Math.max(0, grossIncome - adjustments - se.deductibleHalf);
+      const standardDeduction = data.standardDeduction[status];
+      const deductionUsed = Math.max(standardDeduction, itemizedDeductions);
+      const taxableIncome = Math.max(0, adjustedGrossIncome - deductionUsed);
+
+      const ordinaryTaxablePortion = Math.max(0, taxableIncome - Math.max(0, preferentialIncome));
+      const ordinaryTax = taxFromBrackets(ordinaryTaxablePortion, data.ordinaryBrackets[status]);
+      const prefTax = capitalGainsTax(ordinaryTaxablePortion, Math.max(0, preferentialIncome), status, data);
+      const niit = calculateNIIT(netInvestmentIncome, adjustedGrossIncome, status, data);
+      const stateTaxableIncome = getStateTaxableIncome(state, taxableIncome, status);
+      const stateTax = calculateStateTax(state, taxableIncome, status);
+      const federalPreCreditTax = ordinaryTax + prefTax + se.seTax + niit;
+      const aca = estimatePremiumTaxCredit(adjustedGrossIncome, status, children, otherDependents);
+
+      const credits = calculateCredits(adjustedGrossIncome, status, children, otherDependents, data, ordinaryTax + prefTax + niit, earnedIncome);
+      const federalTaxAfterNonRefundable = Math.max(0, federalPreCreditTax - credits.nonrefundableUsed);
+      const federalTaxBeforeRefundables = Math.max(0, federalTaxAfterNonRefundable + Math.max(0, -aca.netPTCAdjustment));
+      const federalTax = Math.max(0, federalTaxBeforeRefundables - credits.refundableACTC - Math.max(0, aca.netPTCAdjustment));
+      const totalTax = federalTax + stateTax;
+
+      const payments = federalWithholding + estimatedPayments;
+      const balance = payments - totalTax;
+      const effectiveRate = grossIncome > 0 ? (totalTax / grossIncome) * 100 : 0;
+
+      document.getElementById('totalTax').textContent = formatMoney(totalTax);
+      const refundEl = document.getElementById('refundOrDue');
+      refundEl.textContent = balance >= 0 ? 'Refund ' + formatMoney(balance) : 'Due ' + formatMoney(Math.abs(balance));
+      refundEl.className = balance >= 0 ? 'green' : 'orange';
+      document.getElementById('taxableIncome').textContent = formatMoney(taxableIncome);
+      document.getElementById('effectiveRate').textContent = formatPercent(effectiveRate);
+
+      const rows = [
+        ['Gross income', grossIncome],
+        ['Ordinary income bucket', ordinaryIncome],
+        ['Long-term gains / qualified dividends bucket', preferentialIncome],
+        ['Above-the-line adjustments', -(adjustments + se.deductibleHalf)],
+        ['Adjusted gross income (AGI)', adjustedGrossIncome],
+        ['Deduction used', -deductionUsed],
+        ['Taxable income', taxableIncome],
+        ['Ordinary federal income tax', ordinaryTax],
+        ['Long-term capital gains / qualified dividends tax', prefTax],
+        ['Self-employment tax', se.seTax],
+        ['Net Investment Income Tax (estimated)', niit],
+        ['Child/dependent credits used', -credits.nonrefundableUsed],
+        ['Refundable ACTC (estimated)', -credits.refundableACTC]
+      ];
+
+      if (aca.formType === '1095a') {
+        rows.push(
+          ['1095 household size used', aca.householdMembers],
+          ['ACA covered adults used', aca.coveredAdults],
+          ['ACA covered children used', aca.coveredChildren],
+          ['ACA quick-estimate mode used', aca.acaCalcMode === 'auto' ? 1 : 0],
+          ['ACA monthly benchmark premium (estimated)', aca.estimatedMonthlyBenchmark],
+          ['ACA monthly selected plan premium (estimated)', aca.estimatedMonthlyPlanPremium],
+          ['1095-A benchmark premium used', aca.benchmarkPremiumUsed],
+          ['1095-A selected plan premium used', aca.planPremiumUsed],
+          ['1095-A expected household contribution', aca.expectedContribution],
+          ['Allowed Premium Tax Credit (estimated)', -aca.allowedPTC],
+          ['Advance Premium Tax Credit received', aca.advancePTC],
+          [aca.netPTCAdjustment >= 0 ? 'Extra Premium Tax Credit (estimated)' : 'Advance PTC repayment (estimated)', Math.abs(aca.netPTCAdjustment)]
+        );
+      }
+
+      rows.push(
+        ['Estimated federal tax', federalTax],
+        ['State taxable income (estimated)', stateTaxableIncome],
+        ['Estimated state income tax', stateTax],
+        ['Total estimated tax', totalTax],
+        ['Payments already made', -payments],
+        [balance >= 0 ? 'Estimated refund' : 'Estimated amount due', Math.abs(balance)]
+      );
+
+      const breakdown = document.getElementById('resultBreakdown');
+      breakdown.innerHTML = rows.map(([label, value]) => {
+        const countLabels = ['1095 household size used', 'ACA covered adults used', 'ACA covered children used'];
+        const isCountRow = countLabels.includes(label);
+        const isModeRow = label === 'ACA quick-estimate mode used';
+        const displayValue = isCountRow
+          ? String(value)
+          : isModeRow
+            ? (value ? 'Yes' : 'No')
+            : (value < 0 ? '-' + formatMoney(Math.abs(value)) : formatMoney(value));
+        return `
+        <div class="result-row">
+          <span>${label}</span>
+          <span>${displayValue}</span>
+        </div>
+      `;
+      }).join('');
+    }
+
+    document.getElementById('addIncomeBtn').addEventListener('click', () => createIncomeRow());
+    document.getElementById('calculateBtn').addEventListener('click', calculate);
+    document.getElementById('resetBtn').addEventListener('click', resetCalculator);
+    document.getElementById('loadExampleBtn').addEventListener('click', loadExample);
+    ['filingStatus','state','children','otherDependents','itemizedDeductions','retirementAdjustments','federalWithholding','estimatedPayments','has1095','healthFormType','acaCalcMode','householdMembers','monthsCovered','acaAdults','acaChildren','acaPlanLevel','marketplacePremium','slcspPremium','advancePTC'].forEach(id => {
+      document.getElementById(id).addEventListener('input', () => { updateHealth1095UI(); calculate(); });
+      document.getElementById(id).addEventListener('change', () => { updateHealth1095UI(); calculate(); });
     });
 
-    let minSim = null, maxSim = null;
-    if(inp.rMin !== null && inp.rMax !== null && inp.rMax >= inp.rMin){
-      minSim = simulate({ P: inp.P, PMT0: inp.PMT0, years: inp.years, rateAnnual: inp.rMin, contribGrowAnnual: inp.inc, compPerYear: inp.m });
-      maxSim = simulate({ P: inp.P, PMT0: inp.PMT0, years: inp.years, rateAnnual: inp.rMax, contribGrowAnnual: inp.inc, compPerYear: inp.m });
-    }
-
-    el('yearsOut').textContent = inp.years.toString();
-    el('finalOut').textContent = money(base.balance);
-
-    lastYearly = base.yearly;
-
-    // table primero
-    fillTable(base.yearly, minSim ? minSim.yearly : null, maxSim ? maxSim.yearly : null);
-
-    // ✅ IMPORTANTE: mostrar resultados primero, luego dibujar el gráfico
-    showResults();
-
-    // ✅ doble requestAnimationFrame para asegurar que ya tiene tamaño real
-    requestAnimationFrame(() => {
-      requestAnimationFrame(() => {
-        chartState = drawChart(base.yearly);
-      });
-    });
-  }
-
-  function resetAll(){
-    el('initial').value = "0";
-    el('monthly').value = "0";
-    el('increase').value = "0";
-    el('years').value = "0";
-    el('rate').value = "0";
-    el('rateMin').value = "";
-    el('rateMax').value = "";
-    el('comp').value = "12";
-    showForm();
-  }
-
-  // Tooltip
-  canvas.addEventListener('mousemove', (e)=>{
-    if(!chartState || !lastYearly) return;
-
-    const rect = canvas.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-
-    const ptsX = chartState.xs.map(yr => chartState.xMap(yr));
-    let bestIdx = 0;
-    let bestDist = Infinity;
-    for(let i=0;i<ptsX.length;i++){
-      const d = Math.abs(ptsX[i] - x);
-      if(d < bestDist){ bestDist = d; bestIdx = i; }
-    }
-    if(bestDist > 30){
-      tip.style.display = "none";
-      return;
-    }
-
-    const y = lastYearly[bestIdx].year;
-    const fv = lastYearly[bestIdx].fv;
-    const c = lastYearly[bestIdx].contrib;
-
-    tip.innerHTML = `
-      <div><b>Año ${y}</b></div>
-      <div style="margin-top:4px"><span style="color:#c03a36;font-weight:900">●</span> Valor futuro: ${money(fv)}</div>
-      <div><span style="color:#2f9a86;font-weight:900">●</span> Contribuciones totales: ${money(c)}</div>
-    `;
-
-    tip.style.left = clamp(ptsX[bestIdx] + 10, 10, rect.width - 260) + "px";
-    tip.style.top = "20px";
-    tip.style.display = "block";
-  });
-
-  canvas.addEventListener('mouseleave', ()=> tip.style.display = "none");
-
-  // Buttons
-  btnCalc.addEventListener('click', calc);
-  btnReset.addEventListener('click', resetAll);
-  btnBack.addEventListener('click', showForm);
-
-  btnTable.addEventListener('click', ()=>{
-    const isOpen = tableShell.style.display === "block";
-    tableShell.style.display = isOpen ? "none" : "block";
-    btnTable.textContent = isOpen ? "SHOW TABLE" : "HIDE TABLE";
-    if(!isOpen) tableShell.scrollIntoView({behavior:"smooth", block:"start"});
-  });
-
-  // Re-draw on resize (si estás en resultados)
-  window.addEventListener('resize', ()=>{
-    if(lastYearly && results.style.display === "block"){
-      requestAnimationFrame(() => {
-        chartState = drawChart(lastYearly);
-      });
-    }
-  });
-</script>
+    updateHealth1095UI();
+    resetCalculator();
+  </script>
 </body>
 </html>
