@@ -1,0 +1,260 @@
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Estimador de impuestos</title>
+
+<style>
+:root{
+--bg:#f3efe6;
+--panel:#0f5b63;
+--panel2:#0a4750;
+--muted:#d7efe9;
+--btnRed:#b1362f;
+--btnGreen:#2e7d32;
+--shadow:0 10px 24px rgba(0,0,0,.18);
+}
+
+body{
+margin:0;
+font-family:Arial, Helvetica, sans-serif;
+background:var(--bg);
+}
+
+.wrap{
+max-width:900px;
+margin:30px auto;
+padding:0 16px;
+}
+
+.shell{
+background:linear-gradient(180deg,var(--panel),var(--panel2));
+border-radius:6px;
+box-shadow:var(--shadow);
+overflow:hidden;
+}
+
+.topBar{
+background:#0a2f34;
+padding:14px 16px;
+color:#e7f7f3;
+font-weight:700;
+}
+
+.section{
+border-top:1px solid rgba(255,255,255,.1);
+}
+
+.row{
+display:flex;
+justify-content:space-between;
+align-items:center;
+padding:14px;
+color:#eaf7f4;
+}
+
+.row input,
+.row select{
+width:180px;
+padding:8px;
+font-size:16px;
+}
+
+.label{
+font-weight:700;
+}
+
+.btnRow{
+display:flex;
+justify-content:flex-end;
+gap:10px;
+padding:14px;
+background:rgba(0,0,0,.18);
+}
+
+.btn{
+border:none;
+color:#fff;
+font-weight:800;
+padding:10px 16px;
+cursor:pointer;
+}
+
+.red{background:linear-gradient(#c6423a,var(--btnRed));}
+.green{background:linear-gradient(#3b9341,var(--btnGreen));}
+
+.results{
+margin-top:20px;
+background:linear-gradient(180deg,#0f5b63,#0b4d55);
+border-radius:6px;
+color:#eaf7f4;
+display:none;
+}
+
+.resultsHeader{
+padding:20px;
+text-align:center;
+font-size:28px;
+font-weight:900;
+}
+
+.resultNumber{
+font-size:36px;
+margin-top:10px;
+}
+
+.pos{color:#7CFFB2;}
+.neg{color:#FF8C8C;}
+
+.summary{
+padding:20px;
+line-height:1.6;
+}
+</style>
+</head>
+
+<body>
+
+<div class="wrap">
+
+<div class="shell">
+
+<div class="topBar">Estimador de impuestos (W-2 / 1099)</div>
+
+<div class="section row">
+<div class="label">Estado civil</div>
+<select id="status">
+<option value="single">Single</option>
+<option value="married">Married Filing Jointly</option>
+<option value="hoh">Head of Household</option>
+</select>
+</div>
+
+<div class="section row">
+<div class="label">Dependientes</div>
+<input id="kids" type="number" value="0">
+</div>
+
+<div class="section row">
+<div class="label">Ingreso W-2</div>
+<input id="w2" type="number" value="0">
+</div>
+
+<div class="section row">
+<div class="label">Ingreso 1099</div>
+<input id="i1099" type="number" value="0">
+</div>
+
+<div class="section row">
+<div class="label">Millas de trabajo</div>
+<input id="miles" type="number" value="0">
+</div>
+
+<div class="section row">
+<div class="label">Otros gastos</div>
+<input id="expenses" type="number" value="0">
+</div>
+
+<div class="section row">
+<div class="label">Seguro médico</div>
+<input id="health" type="number" value="0">
+</div>
+
+<div class="section row">
+<div class="label">Impuestos ya pagados</div>
+<input id="paid" type="number" value="0">
+</div>
+
+<div class="btnRow">
+<button class="btn red" onclick="calc()">CALCULAR</button>
+<button class="btn green" onclick="resetAll()">RESET</button>
+</div>
+
+</div>
+
+<div class="results" id="results">
+<div class="resultsHeader">
+Resultado estimado
+<div id="resultNumber" class="resultNumber"></div>
+</div>
+
+<div class="summary" id="summary"></div>
+</div>
+
+</div>
+
+<script>
+
+function money(x){
+return x.toLocaleString("en-US",{style:"currency",currency:"USD"})
+}
+
+function calc(){
+
+let status=document.getElementById("status").value
+let kids=Number(document.getElementById("kids").value)
+let w2=Number(document.getElementById("w2").value)
+let i1099=Number(document.getElementById("i1099").value)
+let miles=Number(document.getElementById("miles").value)
+let expenses=Number(document.getElementById("expenses").value)
+let health=Number(document.getElementById("health").value)
+let paid=Number(document.getElementById("paid").value)
+
+let mileageDeduction=miles*0.67
+let totalBusinessDeduction=mileageDeduction+expenses+health
+
+let net1099=i1099-totalBusinessDeduction
+if(net1099<0) net1099=0
+
+let totalIncome=w2+net1099
+
+let standard=14600
+if(status==="married") standard=29200
+if(status==="hoh") standard=21900
+
+let taxable=totalIncome-standard
+if(taxable<0) taxable=0
+
+let incomeTax=taxable*0.10
+let seTax=net1099*0.153
+let childCredit=kids*2000
+
+let totalTax=incomeTax+seTax-childCredit
+let finalResult=paid-totalTax
+
+let resultBox=document.getElementById("results")
+let resultNumber=document.getElementById("resultNumber")
+let summary=document.getElementById("summary")
+
+resultBox.style.display="block"
+
+if(finalResult>=0){
+resultNumber.className="resultNumber pos"
+resultNumber.innerText="+"+money(finalResult)
+}else{
+resultNumber.className="resultNumber neg"
+resultNumber.innerText="-"+money(Math.abs(finalResult))
+}
+
+summary.innerHTML=`
+Ingreso total: ${money(totalIncome)}<br>
+Deducciones negocio: ${money(totalBusinessDeduction)}<br>
+Ingreso tributable: ${money(taxable)}<br>
+Income tax estimado: ${money(incomeTax)}<br>
+Self-employment tax: ${money(seTax)}<br>
+Crédito por hijos: ${money(childCredit)}<br>
+Pagos ya realizados: ${money(paid)}
+`
+}
+
+function resetAll(){
+document.querySelectorAll("input").forEach(i=>i.value=0)
+document.getElementById("results").style.display="none"
+}
+
+</script>
+
+</body>
+</html>
