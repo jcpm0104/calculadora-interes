@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>US Smart Tax Calculator</title>
+
+<style>
+
+body{
+font-family:Arial;
+background:#eef2f7;
+padding:40px;
+}
+
+.container{
+background:white;
+max-width:600px;
+margin:auto;
+padding:30px;
+border-radius:10px;
+box-shadow:0 0 12px rgba(0,0,0,0.1);
+}
+
+h2{
+text-align:center;
+margin-bottom:25px;
+}
+
+input,select,button{
+width:100%;
+padding:10px;
+margin-top:10px;
+margin-bottom:15px;
+font-size:16px;
+}
+
+button{
+background:#2e7dff;
+color:white;
+border:none;
+border-radius:6px;
+cursor:pointer;
+}
+
+.result{
+background:#f3f3f3;
+padding:15px;
+border-radius:6px;
+margin-top:20px;
+}
+
+</style>
+
+</head>
+
+<body>
+
+<div class="container">
+
+<h2>US Smart Tax Calculator</h2>
+
+<label>Total Income ($)</label>
+<input type="number" id="income">
+
+<label>Type of Income</label>
+<select id="incomeType">
+
+<option value="w2">W2 Salary</option>
+
+<option value="self">1099 Self Employment</option>
+
+<option value="trading">1099 Trading</option>
+
+<option value="dividend">1099 Dividends</option>
+
+<option value="interest">1099 Interest</option>
+
+</select>
+
+<label>Filing Status</label>
+<select id="status">
+
+<option value="single">Single</option>
+
+<option value="married">Married Filing Jointly</option>
+
+<option value="hoh">Head of Household</option>
+
+</select>
+
+<label>State</label>
+
+<select id="state">
+
+<option value="0">Florida</option>
+<option value="0">Texas</option>
+<option value="0">Nevada</option>
+<option value="0">Tennessee</option>
+<option value="0">Wyoming</option>
+<option value="0">Alaska</option>
+<option value="0">South Dakota</option>
+<option value="0">Washington</option>
+<option value="0">New Hampshire</option>
+
+<option value="0.05">California</option>
+<option value="0.05">New York</option>
+<option value="0.04">Illinois</option>
+<option value="0.04">Georgia</option>
+<option value="0.04">Virginia</option>
+<option value="0.05">Massachusetts</option>
+<option value="0.05">New Jersey</option>
+
+</select>
+
+<label>Health Insurance Form</label>
+
+<select id="insurance">
+
+<option value="none">None</option>
+
+<option value="1095a">1095-A Marketplace</option>
+
+<option value="1095b">1095-B Insurance</option>
+
+<option value="1095c">1095-C Employer</option>
+
+</select>
+
+<label>Tax Withheld ($)</label>
+<input type="number" id="withheld">
+
+<button onclick="calculate()">Calculate Taxes</button>
+
+<div class="result" id="result"></div>
+
+</div>
+
+<script>
+
+function calculate(){
+
+let income = parseFloat(document.getElementById("income").value);
+
+let status = document.getElementById("status").value;
+
+let type = document.getElementById("incomeType").value;
+
+let stateRate = parseFloat(document.getElementById("state").value);
+
+let withheld = parseFloat(document.getElementById("withheld").value) || 0;
+
+let deduction = 14600;
+
+if(status=="married") deduction = 29200;
+if(status=="hoh") deduction = 21900;
+
+let taxable = Math.max(0,income-deduction);
+
+let federalTax=0;
+
+if(taxable<=11600){
+
+federalTax=taxable*0.10;
+
+}
+
+else if(taxable<=47150){
+
+federalTax=1160+(taxable-11600)*0.12;
+
+}
+
+else if(taxable<=100525){
+
+federalTax=5426+(taxable-47150)*0.22;
+
+}
+
+else{
+
+federalTax=17168+(taxable-100525)*0.24;
+
+}
+
+let selfTax=0;
+
+if(type=="self"){
+
+selfTax=income*0.153;
+
+}
+
+let stateTax=taxable*stateRate;
+
+let total=federalTax+selfTax+stateTax;
+
+let balance=total-withheld;
+
+document.getElementById("result").innerHTML=
+
+"Taxable Income: $" + taxable.toFixed(2) +
+
+"<br><br>Federal Tax: $" + federalTax.toFixed(2) +
+
+"<br><br>Self Employment Tax: $" + selfTax.toFixed(2) +
+
+"<br><br>State Tax: $" + stateTax.toFixed(2) +
+
+"<br><br><b>Total Estimated Tax: $" + total.toFixed(2) +
+
+"</b><br><br>Balance After Withholding: $" + balance.toFixed(2);
+
+}
+
+</script>
+
+</body>
+
+</html>
