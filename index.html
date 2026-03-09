@@ -188,6 +188,16 @@
       font-weight: 700;
       text-align: right;
     }
+    .result-section {
+      padding: 11px 14px;
+      background: #eef4ff;
+      color: #1d4ed8;
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      border-bottom: 1px solid var(--line);
+    }
     .note {
       margin-top: 14px;
       background: #fffbeb;
@@ -494,20 +504,28 @@
         <h2>Results</h2>
         <div class="summary-grid">
           <div class="pill">
-            <small>Total estimated tax</small>
-            <strong id="totalTax">$0.00</strong>
+            <small>Federal tax before credits</small>
+            <strong id="taxBeforeCreditsSummary">$0.00</strong>
+          </div>
+          <div class="pill">
+            <small>Credits applied</small>
+            <strong id="creditsAppliedSummary">$0.00</strong>
+          </div>
+          <div class="pill">
+            <small>Tax after credits</small>
+            <strong id="taxAfterCreditsSummary">$0.00</strong>
+          </div>
+          <div class="pill">
+            <small>Refundable credits</small>
+            <strong id="refundablesSummary">$0.00</strong>
+          </div>
+          <div class="pill">
+            <small>Payments made</small>
+            <strong id="paymentsSummary">$0.00</strong>
           </div>
           <div class="pill">
             <small>Refund / amount due</small>
             <strong id="refundOrDue">$0.00</strong>
-          </div>
-          <div class="pill">
-            <small>Taxable income</small>
-            <strong id="taxableIncome">$0.00</strong>
-          </div>
-          <div class="pill">
-            <small>Effective tax rate</small>
-            <strong id="effectiveRate">0.00%</strong>
           </div>
         </div>
 
@@ -1338,77 +1356,120 @@
       const combinedRefundOrDue = federalRefundOrDue - stateTax;
       const effectiveRate = grossIncome > 0 ? (totalTax / grossIncome) * 100 : 0;
 
-      document.getElementById('totalTax').textContent = formatMoney(totalTax);
+      const federalTaxBeforeCredits = baseIncomeTax + se.seTax + acaRepayment;
+      const creditsApplied = credits.nonrefundableUsed;
+      const taxAfterCredits = federalTotalTax;
+
+      document.getElementById('taxBeforeCreditsSummary').textContent = formatMoney(federalTaxBeforeCredits);
+      document.getElementById('creditsAppliedSummary').textContent = '-' + formatMoney(creditsApplied);
+      document.getElementById('taxAfterCreditsSummary').textContent = formatMoney(taxAfterCredits);
+      document.getElementById('refundablesSummary').textContent = formatMoney(refundableCredits);
+      document.getElementById('paymentsSummary').textContent = formatMoney(payments);
+
       const refundEl = document.getElementById('refundOrDue');
       refundEl.textContent = combinedRefundOrDue >= 0 ? 'Refund ' + formatMoney(combinedRefundOrDue) : 'Due ' + formatMoney(Math.abs(combinedRefundOrDue));
       refundEl.className = combinedRefundOrDue >= 0 ? 'green' : 'orange';
-      document.getElementById('taxableIncome').textContent = formatMoney(taxableIncome);
-      document.getElementById('effectiveRate').textContent = formatPercent(effectiveRate);
 
-      const rows = [
-        ['Gross income', grossIncome],
-        ['Ordinary income bucket', ordinaryIncome],
-        ['Long-term gains / qualified dividends bucket', preferentialBucket],
-        ['Earned income used for EIC / ACTC', earnedIncome],
-        ['Net self-employment income', selfEmploymentNet],
-        ['Above-the-line adjustments', -(adjustments + se.deductibleHalf)],
-        ['Adjusted gross income (AGI)', adjustedGrossIncome],
-        ['Base deduction used', -baseDeduction],
-        ['Qualified tips deduction (Schedule 1-A)', -tipDeduction],
-        ['Qualified overtime deduction (Schedule 1-A)', -overtimeDeduction],
-        ['Total deduction used', -deductionUsed],
-        ['Taxable income', taxableIncome],
-        ['Ordinary federal income tax', ordinaryTax],
-        ['Long-term capital gains / qualified dividends tax', prefTax],
-        ['Self-employment tax', se.seTax],
-        ['Net Investment Income Tax (estimated)', niit],
-        ['Child/dependent credits used', -credits.nonrefundableUsed],
-        ['Additional Child Tax Credit (estimated)', -credits.refundableACTC],
-        ['Earned Income Credit (estimated)', -eic]
+      const sections = [
+        {
+          title: 'Income and deductions',
+          rows: [
+            ['Gross income', grossIncome],
+            ['Ordinary income bucket', ordinaryIncome],
+            ['Long-term gains / qualified dividends bucket', preferentialBucket],
+            ['Earned income used for EIC / ACTC', earnedIncome],
+            ['Net self-employment income', selfEmploymentNet],
+            ['Above-the-line adjustments', -(adjustments + se.deductibleHalf)],
+            ['Adjusted gross income (AGI)', adjustedGrossIncome],
+            ['Base deduction used', -baseDeduction],
+            ['Qualified tips deduction (Schedule 1-A)', -tipDeduction],
+            ['Qualified overtime deduction (Schedule 1-A)', -overtimeDeduction],
+            ['Total deduction used', -deductionUsed],
+            ['Taxable income', taxableIncome]
+          ]
+        },
+        {
+          title: 'Federal tax calculation',
+          rows: [
+            ['Ordinary federal income tax', ordinaryTax],
+            ['Long-term capital gains / qualified dividends tax', prefTax],
+            ['Net Investment Income Tax (estimated)', niit],
+            ['Self-employment tax', se.seTax],
+            ['ACA repayment added to tax', acaRepayment],
+            ['Federal tax before credits', federalTaxBeforeCredits],
+            ['Credits applied', -creditsApplied],
+            ['Tax after credits', taxAfterCredits]
+          ]
+        },
+        {
+          title: 'Refundable credits and payments',
+          rows: [
+            ['Additional Child Tax Credit (estimated)', -credits.refundableACTC],
+            ['Earned Income Credit (estimated)', -eic],
+            ['Extra Premium Tax Credit (estimated)', -refundablePTC],
+            ['Refundable credits total', -refundableCredits],
+            ['Federal payments already made', -payments],
+            [federalRefundOrDue >= 0 ? 'Federal refund' : 'Federal amount due', Math.abs(federalRefundOrDue)]
+          ]
+        }
       ];
 
       if (aca.formType === '1095a') {
-        rows.push(
-          ['1095 household size used', aca.householdMembers],
-          ['ACA covered adults used', aca.coveredAdults],
-          ['ACA covered children used', aca.coveredChildren],
-          ['ACA quick-estimate mode used', aca.acaCalcMode === 'auto' ? 1 : 0],
-          ['ACA monthly benchmark premium (estimated)', aca.estimatedMonthlyBenchmark],
-          ['ACA monthly selected plan premium (estimated)', aca.estimatedMonthlyPlanPremium],
-          ['1095-A benchmark premium used', aca.benchmarkPremiumUsed],
-          ['1095-A selected plan premium used', aca.planPremiumUsed],
-          ['1095-A expected household contribution', aca.expectedContribution],
-          ['Allowed Premium Tax Credit (estimated)', -aca.allowedPTC],
-          ['Advance Premium Tax Credit received', aca.advancePTC],
-          [aca.netPTCAdjustment >= 0 ? 'Extra Premium Tax Credit (estimated)' : 'Advance PTC repayment (estimated)', Math.abs(aca.netPTCAdjustment)]
-        );
+        sections.splice(2, 0, {
+          title: 'Marketplace / 1095-A detail',
+          rows: [
+            ['1095 household size used', aca.householdMembers],
+            ['ACA covered adults used', aca.coveredAdults],
+            ['ACA covered children used', aca.coveredChildren],
+            ['ACA quick-estimate mode used', aca.acaCalcMode === 'auto' ? 1 : 0],
+            ['ACA monthly benchmark premium (estimated)', aca.estimatedMonthlyBenchmark],
+            ['ACA monthly selected plan premium (estimated)', aca.estimatedMonthlyPlanPremium],
+            ['1095-A benchmark premium used', aca.benchmarkPremiumUsed],
+            ['1095-A selected plan premium used', aca.planPremiumUsed],
+            ['1095-A expected household contribution', aca.expectedContribution],
+            ['Allowed Premium Tax Credit (estimated)', -aca.allowedPTC],
+            ['Advance Premium Tax Credit received', aca.advancePTC],
+            [aca.netPTCAdjustment >= 0 ? 'Extra Premium Tax Credit (estimated)' : 'Advance PTC repayment (estimated)', Math.abs(aca.netPTCAdjustment)]
+          ]
+        });
       }
 
-      rows.push(
-        ['Estimated federal tax (before refundables)', federalTotalTax],
-        ['Federal payments already made', -payments],
-        ['Federal refund / amount due', Math.abs(federalRefundOrDue)],
-        ['State taxable income (estimated)', stateTaxableIncome],
-        ['Estimated state income tax', stateTax],
-        ['Total estimated tax', totalTax],
-        [combinedRefundOrDue >= 0 ? 'Estimated refund' : 'Estimated amount due', Math.abs(combinedRefundOrDue)]
-      );
+      sections.push({
+        title: 'State estimate and final result',
+        rows: [
+          ['State taxable income (estimated)', stateTaxableIncome],
+          ['Estimated state income tax', stateTax],
+          ['Combined federal + state tax', totalTax],
+          ['Effective tax rate', effectiveRate],
+          [combinedRefundOrDue >= 0 ? 'Estimated refund' : 'Estimated amount due', Math.abs(combinedRefundOrDue)]
+        ]
+      });
 
       const breakdown = document.getElementById('resultBreakdown');
-      breakdown.innerHTML = rows.map(([label, value]) => {
-        const countLabels = ['1095 household size used', 'ACA covered adults used', 'ACA covered children used'];
-        const isCountRow = countLabels.includes(label);
-        const isModeRow = label === 'ACA quick-estimate mode used';
-        const displayValue = isCountRow
-          ? String(value)
-          : isModeRow
-            ? (value ? 'Yes' : 'No')
-            : (value < 0 ? '-' + formatMoney(Math.abs(value)) : formatMoney(value));
-        return `
+      const countLabels = new Set(['1095 household size used', 'ACA covered adults used', 'ACA covered children used']);
+      const isModeLabel = (label) => label === 'ACA quick-estimate mode used';
+      const isPercentLabel = (label) => label === 'Effective tax rate';
+
+      breakdown.innerHTML = sections.map(section => {
+        const sectionRows = section.rows.map(([label, value]) => {
+          const displayValue = countLabels.has(label)
+            ? String(value)
+            : isModeLabel(label)
+              ? (value ? 'Yes' : 'No')
+              : isPercentLabel(label)
+                ? formatPercent(value)
+                : (value < 0 ? '-' + formatMoney(Math.abs(value)) : formatMoney(value));
+          return `
         <div class="result-row">
           <span>${label}</span>
           <span>${displayValue}</span>
         </div>
+      `;
+        }).join('');
+
+        return `
+        <div class="result-section">${section.title}</div>
+        ${sectionRows}
       `;
       }).join('');
     }
