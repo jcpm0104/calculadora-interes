@@ -338,6 +338,17 @@
 
         <div class="row">
           <div class="field span-6">
+            <label for="qualifiedTips">Qualified tips (Schedule 1-A, optional)</label>
+            <input id="qualifiedTips" type="number" min="0" step="0.01" value="0" placeholder="Only if deductible for 2025">
+          </div>
+          <div class="field span-6">
+            <label for="qualifiedOvertime">Qualified overtime compensation (Schedule 1-A, optional)</label>
+            <input id="qualifiedOvertime" type="number" min="0" step="0.01" value="0" placeholder="W-2 or allowed 1099 overtime">
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="field span-6">
             <label for="federalWithholding">Federal withholding already paid</label>
             <input id="federalWithholding" type="number" min="0" step="0.01" value="0">
           </div>
@@ -611,6 +622,27 @@
 
 
 
+    const EITC_2025 = {
+      phaseInRate: { 0: 0.0765, 1: 0.34, 2: 0.40, 3: 0.45 },
+      phaseOutRate: { 0: 0.0765, 1: 0.1598, 2: 0.2106, 3: 0.2106 },
+      maxCredit: { 0: 649, 1: 4328, 2: 7152, 3: 8046 },
+      phaseOutStart: {
+        single: { 0: 10620, 1: 23350, 2: 23350, 3: 23350 },
+        hoh:    { 0: 10620, 1: 23350, 2: 23350, 3: 23350 },
+        mfs:    { 0: 10620, 1: 23350, 2: 23350, 3: 23350 },
+        mfj:    { 0: 17730, 1: 30470, 2: 30470, 3: 30470 }
+      },
+      incomeLimit: {
+        single: { 0: 19104, 1: 50434, 2: 57310, 3: 61555 },
+        hoh:    { 0: 19104, 1: 50434, 2: 57310, 3: 61555 },
+        mfs:    { 0: 19104, 1: 50434, 2: 57310, 3: 61555 },
+        mfj:    { 0: 26214, 1: 57554, 2: 64430, 3: 68675 }
+      },
+      investmentIncomeLimit: 11950
+    };
+
+    const FPL_2025 = { 1: 15650, 2: 21150, 3: 26650, 4: 32150, 5: 37650, 6: 43150, 7: 48650, 8: 54150 };
+
     const NO_INCOME_TAX_STATES = new Set(['AK', 'FL', 'NV', 'NH', 'SD', 'TN', 'TX', 'WA', 'WY']);
 
     const FLAT_STATE_TAX_RATES = {
@@ -850,6 +882,77 @@
       return TAX_DATA_2025;
     }
 
+    function parseNumber(id) {
+      const el = document.getElementById(id);
+      return el ? (parseFloat(el.value) || 0) : 0;
+    }
+
+    function getHouseholdSize(status, children, otherDependents) {
+      return (status === 'mfj' ? 2 : 1) + Math.max(0, children) + Math.max(0, otherDependents);
+    }
+
+    function syncHouseholdMembers() {
+      const el = document.getElementById('householdMembers');
+      if (!el) return;
+      const current = Math.floor(parseNumber('householdMembers'));
+      if (current > 0) return;
+      const status = document.getElementById('filingStatus').value;
+      const children = Math.max(0, Math.floor(parseNumber('children')));
+      const otherDependents = Math.max(0, Math.floor(parseNumber('otherDependents')));
+      el.value = getHouseholdSize(status, children, otherDependents);
+    }
+
+    function taxFromBrackets(income, brackets) {
+      let remaining = Math.max(0, income);
+      let lastLimit = 0;
+      let tax = 0;
+      for (const [limit, rate] of brackets) {
+        const taxableSlice = Math.min(remaining, limit - lastLimit);
+        if (taxableSlice > 0) tax += taxableSlice * rate;
+        remaining -= taxableSlice;
+        lastLimit = limit;
+        if (remaining <= 0) break;
+      }
+      return tax;
+    }
+
+    function capitalGainsTax(ordinaryTaxable, preferentialIncome, status, data) {
+      const gains = Math.max(0, preferentialIncome);
+      if (!gains) return 0;
+      const thresholds = data.capitalGainsThresholds[status];
+      const zeroRoom = Math.max(0, thresholds.zero - ordinaryTaxable);
+      const zeroPortion = Math.min(gains, zeroRoom);
+      let remaining = gains - zeroPortion;
+      const fifteenRoom = Math.max(0, thresholds.fifteen - ordinaryTaxable - zeroPortion);
+      const fifteenPortion = Math.min(remaining, fifteenRoom);
+      remaining -= fifteenPortion;
+      return (fifteenPortion * 0.15) + (remaining * 0.20);
+    }
+
+    function calculateSchedule1ADeduction(amount, magi, status, limitAmount) {
+      const capped = Math.min(Math.max(0, amount), limitAmount);
+      const threshold = status === 'mfj' ? 300000 : 150000;
+      const phaseoutUnits = Math.floor(Math.max(0, magi - threshold) / 1000);
+      const reduction = phaseoutUnits * 100;
+      return Math.max(0, capped - reduction);
+    }
+
+    function calculateEIC(earnedIncome, agi, status, children, netInvestmentIncome) {
+      const qualifyingChildren = Math.max(0, Math.min(3, Math.floor(children)));
+      const comparisonIncome = Math.max(earnedIncome, agi);
+      if (comparisonIncome <= 0) return 0;
+      if (netInvestmentIncome > EITC_2025.investmentIncomeLimit) return 0;
+      const limit = EITC_2025.incomeLimit[status][qualifyingChildren];
+      if (comparisonIncome >= limit) return 0;
+      const phaseInRate = EITC_2025.phaseInRate[qualifyingChildren];
+      const maxCredit = EITC_2025.maxCredit[qualifyingChildren];
+      const phaseOutRate = EITC_2025.phaseOutRate[qualifyingChildren];
+      const phaseOutStart = EITC_2025.phaseOutStart[status][qualifyingChildren];
+      const phasedInCredit = Math.min(maxCredit, Math.max(0, earnedIncome) * phaseInRate);
+      const phaseOutReduction = Math.max(0, comparisonIncome - phaseOutStart) * phaseOutRate;
+      return Math.max(0, phasedInCredit - phaseOutReduction);
+    }
+
     function createIncomeRow(type = 'w2', amount = 0, expense = 0) {
       const clone = template.content.cloneNode(true);
       const row = clone.querySelector('.income-row');
@@ -887,6 +990,8 @@
       document.getElementById('otherDependents').value = 0;
       document.getElementById('itemizedDeductions').value = 0;
       document.getElementById('retirementAdjustments').value = 0;
+      document.getElementById('qualifiedTips').value = 0;
+      document.getElementById('qualifiedOvertime').value = 0;
       document.getElementById('federalWithholding').value = 0;
       document.getElementById('estimatedPayments').value = 0;
       document.getElementById('has1095').value = 'no';
@@ -914,6 +1019,8 @@
       document.getElementById('otherDependents').value = 0;
       document.getElementById('itemizedDeductions').value = 0;
       document.getElementById('retirementAdjustments').value = 0;
+      document.getElementById('qualifiedTips').value = 0;
+      document.getElementById('qualifiedOvertime').value = 0;
       document.getElementById('federalWithholding').value = 0;
       document.getElementById('estimatedPayments').value = 0;
       document.getElementById('has1095').value = 'no';
@@ -976,76 +1083,6 @@
         quickFields.classList.toggle('hidden', acaMode !== 'auto');
       }
     }
-
-
-
-    function parseNumber(id) {
-      const el = document.getElementById(id);
-      if (!el) return 0;
-      const v = parseFloat(el.value);
-      return Number.isFinite(v) ? v : 0;
-    }
-
-    function taxFromBrackets(income, brackets) {
-      let tax = 0;
-      let prev = 0;
-      let remaining = Math.max(0, income);
-      for (const [limit, rate] of brackets) {
-        const upper = limit;
-        const taxableAtThisRate = Math.max(0, Math.min(remaining, upper - prev));
-        tax += taxableAtThisRate * rate;
-        remaining -= taxableAtThisRate;
-        prev = upper;
-        if (remaining <= 0) break;
-      }
-      return Math.max(0, tax);
-    }
-
-    function capitalGainsTax(ordinaryTaxable, preferentialIncome, status, data) {
-      const pref = Math.max(0, preferentialIncome);
-      if (pref <= 0) return 0;
-      const thresholds = data.capitalGainsThresholds[status];
-      const ordinary = Math.max(0, ordinaryTaxable);
-
-      const zeroRoom = Math.max(0, thresholds.zero - ordinary);
-      const taxedAt0 = Math.min(pref, zeroRoom);
-
-      const remainingAfter0 = Math.max(0, pref - taxedAt0);
-      const fifteenRoom = Math.max(0, thresholds.fifteen - ordinary - taxedAt0);
-      const taxedAt15 = Math.min(remainingAfter0, fifteenRoom);
-
-      const taxedAt20 = Math.max(0, pref - taxedAt0 - taxedAt15);
-      return taxedAt15 * 0.15 + taxedAt20 * 0.20;
-    }
-
-    function getHouseholdSize(status, children, otherDependents) {
-      const base = status === 'mfj' ? 2 : 1;
-      return Math.max(1, base + Math.max(0, children) + Math.max(0, otherDependents));
-    }
-
-    function syncHouseholdMembers() {
-      const has1095 = document.getElementById('has1095')?.value;
-      const input = document.getElementById('householdMembers');
-      if (!input || has1095 !== 'yes') return;
-      const status = document.getElementById('filingStatus').value;
-      const children = Math.max(0, Math.floor(parseNumber('children')));
-      const otherDependents = Math.max(0, Math.floor(parseNumber('otherDependents')));
-      const current = Math.max(0, Math.floor(parseNumber('householdMembers')));
-      if (!current || current < 1) {
-        input.value = getHouseholdSize(status, children, otherDependents);
-      }
-    }
-
-    const FPL_2025 = {
-      1: 15120,
-      2: 20440,
-      3: 25760,
-      4: 31080,
-      5: 36400,
-      6: 41720,
-      7: 47040,
-      8: 52360
-    };
 
     function getFplForHousehold(size) {
       if (size <= 8) return FPL_2025[size];
@@ -1179,17 +1216,19 @@
       const phaseoutThreshold = status === 'mfj' ? data.ctcPhaseout.mfj : data.ctcPhaseout.default;
       const initialCTC = children * data.ctcPerChild + otherDependents * data.odcPerDependent;
       const phaseout = Math.max(0, Math.ceil((Math.max(0, magi - phaseoutThreshold)) / 1000) * 50);
-      const nonrefundablePool = Math.max(0, initialCTC - phaseout);
-      const usedAgainstTax = Math.min(nonrefundablePool, Math.max(0, taxBeforeCredits));
+      const availableCredit = Math.max(0, initialCTC - phaseout);
+      const nonrefundableUsed = Math.min(availableCredit, Math.max(0, taxBeforeCredits));
 
-      const childPoolRemaining = Math.max(0, children * data.ctcPerChild - Math.max(0, phaseout));
-      const possibleRefundable = Math.min(children * data.refundableCtcCapPerChild, Math.max(0, earnedIncome - 2500) * 0.15);
-      const refundableACTC = Math.min(possibleRefundable, Math.max(0, childPoolRemaining - Math.min(childPoolRemaining, usedAgainstTax)));
+      const childCreditAvailable = Math.max(0, children * data.ctcPerChild - phaseout);
+      const childCreditRemaining = Math.max(0, childCreditAvailable - Math.min(childCreditAvailable, nonrefundableUsed));
+      const earnedIncomeForACTC = Math.max(0, earnedIncome);
+      const possibleRefundable = Math.min(children * data.refundableCtcCapPerChild, Math.max(0, earnedIncomeForACTC - 2500) * 0.15);
+      const refundableACTC = Math.min(possibleRefundable, childCreditRemaining);
 
       return {
         initialCTC,
         phaseout,
-        nonrefundableUsed: usedAgainstTax,
+        nonrefundableUsed,
         refundableACTC
       };
     }
@@ -1207,6 +1246,8 @@
       const otherDependents = Math.max(0, Math.floor(parseNumber('otherDependents')));
       const itemizedDeductions = Math.max(0, parseNumber('itemizedDeductions'));
       const adjustments = Math.max(0, parseNumber('retirementAdjustments'));
+      const qualifiedTips = Math.max(0, parseNumber('qualifiedTips'));
+      const qualifiedOvertime = Math.max(0, parseNumber('qualifiedOvertime'));
       const federalWithholding = Math.max(0, parseNumber('federalWithholding'));
       const estimatedPayments = Math.max(0, parseNumber('estimatedPayments'));
       syncHouseholdMembers();
@@ -1226,13 +1267,13 @@
         switch (type) {
           case 'w2':
             ordinaryIncome += net;
-            earnedIncome += Math.max(0, net);
+            earnedIncome += net;
             break;
           case '1099nec':
           case '1099k':
             ordinaryIncome += net;
             selfEmploymentNet += net;
-            earnedIncome += Math.max(0, net);
+            earnedIncome += net;
             break;
           case 'shortTrading':
             ordinaryIncome += net;
@@ -1261,54 +1302,69 @@
         }
       });
 
+      earnedIncome = Math.max(0, earnedIncome);
       const se = calculateSE(selfEmploymentNet);
-      const totalIncome = ordinaryIncome + preferentialIncome;
-      const grossIncome = Math.max(0, totalIncome);
+      const grossIncome = ordinaryIncome + preferentialIncome;
       const adjustedGrossIncome = Math.max(0, grossIncome - adjustments - se.deductibleHalf);
+      const tipDeduction = calculateSchedule1ADeduction(qualifiedTips, adjustedGrossIncome, status, 25000);
+      const overtimeLimit = status === 'mfj' ? 25000 : 12500;
+      const overtimeDeduction = calculateSchedule1ADeduction(qualifiedOvertime, adjustedGrossIncome, status, overtimeLimit);
       const standardDeduction = data.standardDeduction[status];
-      const deductionUsed = Math.max(standardDeduction, itemizedDeductions);
+      const baseDeduction = Math.max(standardDeduction, itemizedDeductions);
+      const additionalBelowLineDeductions = tipDeduction + overtimeDeduction;
+      const deductionUsed = baseDeduction + additionalBelowLineDeductions;
       const taxableIncome = Math.max(0, adjustedGrossIncome - deductionUsed);
 
-      const ordinaryTaxablePortion = Math.max(0, taxableIncome - Math.max(0, preferentialIncome));
+      const preferentialBucket = Math.max(0, preferentialIncome);
+      const ordinaryTaxablePortion = Math.max(0, taxableIncome - preferentialBucket);
       const ordinaryTax = taxFromBrackets(ordinaryTaxablePortion, data.ordinaryBrackets[status]);
-      const prefTax = capitalGainsTax(ordinaryTaxablePortion, Math.max(0, preferentialIncome), status, data);
+      const prefTax = capitalGainsTax(ordinaryTaxablePortion, preferentialBucket, status, data);
       const niit = calculateNIIT(netInvestmentIncome, adjustedGrossIncome, status, data);
       const stateTaxableIncome = getStateTaxableIncome(state, taxableIncome, status);
       const stateTax = calculateStateTax(state, taxableIncome, status);
-      const federalPreCreditTax = ordinaryTax + prefTax + se.seTax + niit;
       const aca = estimatePremiumTaxCredit(adjustedGrossIncome, status, children, otherDependents);
 
-      const credits = calculateCredits(adjustedGrossIncome, status, children, otherDependents, data, ordinaryTax + prefTax + niit, earnedIncome);
-      const federalTaxAfterNonRefundable = Math.max(0, federalPreCreditTax - credits.nonrefundableUsed);
-      const federalTaxBeforeRefundables = Math.max(0, federalTaxAfterNonRefundable + Math.max(0, -aca.netPTCAdjustment));
-      const federalTax = Math.max(0, federalTaxBeforeRefundables - credits.refundableACTC - Math.max(0, aca.netPTCAdjustment));
-      const totalTax = federalTax + stateTax;
-
+      const baseIncomeTax = ordinaryTax + prefTax + niit;
+      const credits = calculateCredits(adjustedGrossIncome, status, children, otherDependents, data, baseIncomeTax, earnedIncome);
+      const nonrefundableFederalTax = Math.max(0, baseIncomeTax - credits.nonrefundableUsed);
+      const acaRepayment = Math.max(0, -aca.netPTCAdjustment);
+      const refundablePTC = Math.max(0, aca.netPTCAdjustment);
+      const federalTotalTax = Math.max(0, nonrefundableFederalTax + se.seTax + acaRepayment);
+      const eic = calculateEIC(earnedIncome, adjustedGrossIncome, status, children, netInvestmentIncome);
+      const refundableCredits = credits.refundableACTC + refundablePTC + eic;
       const payments = federalWithholding + estimatedPayments;
-      const balance = payments - totalTax;
+      const federalRefundOrDue = payments + refundableCredits - federalTotalTax;
+      const totalTax = federalTotalTax + stateTax;
+      const combinedRefundOrDue = federalRefundOrDue - stateTax;
       const effectiveRate = grossIncome > 0 ? (totalTax / grossIncome) * 100 : 0;
 
       document.getElementById('totalTax').textContent = formatMoney(totalTax);
       const refundEl = document.getElementById('refundOrDue');
-      refundEl.textContent = balance >= 0 ? 'Refund ' + formatMoney(balance) : 'Due ' + formatMoney(Math.abs(balance));
-      refundEl.className = balance >= 0 ? 'green' : 'orange';
+      refundEl.textContent = combinedRefundOrDue >= 0 ? 'Refund ' + formatMoney(combinedRefundOrDue) : 'Due ' + formatMoney(Math.abs(combinedRefundOrDue));
+      refundEl.className = combinedRefundOrDue >= 0 ? 'green' : 'orange';
       document.getElementById('taxableIncome').textContent = formatMoney(taxableIncome);
       document.getElementById('effectiveRate').textContent = formatPercent(effectiveRate);
 
       const rows = [
         ['Gross income', grossIncome],
         ['Ordinary income bucket', ordinaryIncome],
-        ['Long-term gains / qualified dividends bucket', preferentialIncome],
+        ['Long-term gains / qualified dividends bucket', preferentialBucket],
+        ['Earned income used for EIC / ACTC', earnedIncome],
+        ['Net self-employment income', selfEmploymentNet],
         ['Above-the-line adjustments', -(adjustments + se.deductibleHalf)],
         ['Adjusted gross income (AGI)', adjustedGrossIncome],
-        ['Deduction used', -deductionUsed],
+        ['Base deduction used', -baseDeduction],
+        ['Qualified tips deduction (Schedule 1-A)', -tipDeduction],
+        ['Qualified overtime deduction (Schedule 1-A)', -overtimeDeduction],
+        ['Total deduction used', -deductionUsed],
         ['Taxable income', taxableIncome],
         ['Ordinary federal income tax', ordinaryTax],
         ['Long-term capital gains / qualified dividends tax', prefTax],
         ['Self-employment tax', se.seTax],
         ['Net Investment Income Tax (estimated)', niit],
         ['Child/dependent credits used', -credits.nonrefundableUsed],
-        ['Refundable ACTC (estimated)', -credits.refundableACTC]
+        ['Additional Child Tax Credit (estimated)', -credits.refundableACTC],
+        ['Earned Income Credit (estimated)', -eic]
       ];
 
       if (aca.formType === '1095a') {
@@ -1329,12 +1385,13 @@
       }
 
       rows.push(
-        ['Estimated federal tax', federalTax],
+        ['Estimated federal tax (before refundables)', federalTotalTax],
+        ['Federal payments already made', -payments],
+        ['Federal refund / amount due', Math.abs(federalRefundOrDue)],
         ['State taxable income (estimated)', stateTaxableIncome],
         ['Estimated state income tax', stateTax],
         ['Total estimated tax', totalTax],
-        ['Payments already made', -payments],
-        [balance >= 0 ? 'Estimated refund' : 'Estimated amount due', Math.abs(balance)]
+        [combinedRefundOrDue >= 0 ? 'Estimated refund' : 'Estimated amount due', Math.abs(combinedRefundOrDue)]
       );
 
       const breakdown = document.getElementById('resultBreakdown');
@@ -1360,7 +1417,7 @@
     document.getElementById('calculateBtn').addEventListener('click', calculate);
     document.getElementById('resetBtn').addEventListener('click', resetCalculator);
     document.getElementById('loadExampleBtn').addEventListener('click', loadExample);
-    ['filingStatus','state','children','otherDependents','itemizedDeductions','retirementAdjustments','federalWithholding','estimatedPayments','has1095','healthFormType','acaCalcMode','householdMembers','monthsCovered','acaAdults','acaChildren','acaPlanLevel','marketplacePremium','slcspPremium','advancePTC'].forEach(id => {
+    ['filingStatus','state','children','otherDependents','itemizedDeductions','retirementAdjustments','qualifiedTips','qualifiedOvertime','federalWithholding','estimatedPayments','has1095','healthFormType','acaCalcMode','householdMembers','monthsCovered','acaAdults','acaChildren','acaPlanLevel','marketplacePremium','slcspPremium','advancePTC'].forEach(id => {
       document.getElementById(id).addEventListener('input', () => { updateHealth1095UI(); calculate(); });
       document.getElementById(id).addEventListener('change', () => { updateHealth1095UI(); calculate(); });
     });
